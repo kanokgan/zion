@@ -1,0 +1,7 @@
+# apps/zion/kustomization.yaml
+# Everything Flux applies for this cluster's apps (clusters/zion/apps.yaml).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - immich
+  - actual

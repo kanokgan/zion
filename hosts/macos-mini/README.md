@@ -1,0 +1,21 @@
+# macos-mini: Mac mini host-level setup
+
+Things that run directly on macOS, outside the Lima VM and outside Flux (ADR 0008). Keep this current: if it is not here, a rebuilt mini will not have it.
+
+## Installed
+| What | How installed | Notes |
+|---|---|---|
+| Plex Media Server | app: `/Applications/Plex Media Server.app` | exposed as `plex.kanokgan.com` via the `macos-mini` tunnel, service URL `http://localhost:32400` |
+| Jellyfin | app: `/Applications/Jellyfin.app` | exposed as `jellyfin.kanokgan.com` via the `macos-mini` tunnel, service URL `http://localhost:8096` (the Lenovo's `home-brain` tunnel also has a `jellyfin` route; it is not migrated and goes away when the Lenovo is wiped, so make sure DNS points at `macos-mini`) |
+| cloudflared | Homebrew `cloudflared` (version 2026.9.0 on 2026-10-12) | system LaunchDaemon `/Library/LaunchDaemons/com.cloudflare.cloudflared.plist`, runs `tunnel run --token-file ...`; tunnel `macos-mini`; token file is outside the repo and never committed |
+| Tailscale | macOS app | device `macos-mini`; `tailscale serve` publishes the k3s API on tailnet port 6443 (Lens) |
+| Lima | Homebrew `lima` | VM `zion` (see `hosts/macos-mini/lima/zion.yaml`) |
+
+## To find out and record
+- Whether Plex and Jellyfin are meant to be running now, and how they start (login item, launchd, manual). Both were not listening on 2026-10-12.
+- Where each keeps its config/database and where its media is mounted (NAS over SMB, which path).
+- How they are backed up and how a restore works.
+- FileVault is on, so after a reboot nothing here starts until the disk is unlocked.
+
+## Not in Git by design
+Secrets (tunnel token, Tailscale auth) stay out of the repo.

@@ -1,0 +1,56 @@
+# apps/zion/actual/kustomization.yaml
+# Actual Budget on the mini (test endpoint): https://actual-standby.dove-komodo.ts.net, separate server and
+# separate data from the Lenovo. The Lenovo remains production (actual.kanokgan.com) until cutover.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base/actual
+  - tailscale.yaml
+  - tailscale-auth.sops.yaml
+patches:
+  - target:
+      kind: Deployment
+      name: actual
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: actual
+      spec:
+        template:
+          spec:
+            serviceAccountName: actual-tailscale
+            containers:
+              - name: tailscale
+                # Deliberate exception to "pin image versions" (same as Immich): a backward-compatible
+                # networking client that should pick up security fixes. Needs Docker Hub reachable on start.
+                image: tailscale/tailscale:latest
+                imagePullPolicy: Always
+                env:
+                  - name: TS_AUTHKEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: tailscale-auth
+                        key: TS_AUTHKEY
+                  - name: TS_HOSTNAME
+                    value: actual-standby
+                  - name: TS_KUBE_SECRET
+                    value: actual-tailscale-state
+                  - name: TS_USERSPACE
+                    value: "true"
+                  - name: TS_SERVE_CONFIG
+                    value: /config/serve.json
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 500m
+                    memory: 256Mi
+                volumeMounts:
+                  - name: tailscale-config
+                    mountPath: /config
+            volumes:
+              - name: tailscale-config
+                configMap:
+                  name: tailscale-config

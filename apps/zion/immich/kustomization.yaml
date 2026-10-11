@@ -1,0 +1,77 @@
+# apps/zion/immich/kustomization.yaml
+# Standby overlay (ADR 0004): the server runs at 1 replica as a read-mostly copy reachable at
+# https://immich-standby.dove-komodo.ts.net (the Tailscale sidecar lives in the server pod); ML stays at 0.
+# Uploads made here are lost when the NVMe copy is refreshed from the NAS. Set the server replicas to 0 to
+# take the standby offline.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base/immich
+  - library.yaml
+  - tailscale.yaml
+  - secret.sops.yaml
+  - tailscale-auth.sops.yaml
+patches:
+  - target:
+      kind: Deployment
+      name: immich-server
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/template/spec/containers/0/env/1/value
+        value: "false"
+  - target:
+      kind: Deployment
+      name: immich-machine-learning
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+  - target:
+      kind: Deployment
+      name: immich-server
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: immich-server
+      spec:
+        template:
+          spec:
+            serviceAccountName: immich-tailscale
+            containers:
+              - name: tailscale
+                # Deliberate exception to "pin image versions": a networking client that stays backward compatible
+                # and should pick up security fixes. Always pulls on start, so this needs Docker Hub reachable.
+                image: tailscale/tailscale:latest
+                imagePullPolicy: Always
+                env:
+                  - name: TS_AUTHKEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: tailscale-auth
+                        key: TS_AUTHKEY
+                  - name: TS_HOSTNAME
+                    value: immich-standby
+                  - name: TS_KUBE_SECRET
+                    value: immich-tailscale-state
+                  - name: TS_USERSPACE
+                    value: "true"
+                  - name: TS_SERVE_CONFIG
+                    value: /config/serve.json
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 500m
+                    memory: 256Mi
+                volumeMounts:
+                  - name: tailscale-config
+                    mountPath: /config
+            volumes:
+              - name: tailscale-config
+                configMap:
+                  name: tailscale-serve-config

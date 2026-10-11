@@ -1,0 +1,16 @@
+# apps/base/immich/configmap.yaml
+# Non-secret settings, carried over from the Lenovo's immich-config. DB_PASSWORD is in the immich-secrets Secret.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: immich-config
+  namespace: immich
+  labels:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/instance: immich-config
+data:
+  DB_HOSTNAME: immich-postgres
+  DB_DATABASE_NAME: immich
+  DB_USERNAME: immich
+  REDIS_HOSTNAME: immich-redis
+  TZ: Asia/Bangkok

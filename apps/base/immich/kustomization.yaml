@@ -1,0 +1,16 @@
+# apps/base/immich/kustomization.yaml
+# Cluster-neutral Immich definition. Cluster specifics (library volume, secrets, replicas) live in apps/<cluster>/immich/.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: immich
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - postgres.yaml
+  - redis.yaml
+  - machine-learning.yaml
+  - server.yaml
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: zion-lab
+    includeSelectors: false

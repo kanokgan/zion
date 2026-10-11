@@ -1,0 +1,7 @@
+# .sops.yaml
+# Files named *.sops.yaml have only their data/stringData values encrypted.
+# Encrypt in place with: sops --encrypt --in-place path/to/name.sops.yaml
+creation_rules:
+  - path_regex: .*\.sops\.ya?ml$
+    encrypted_regex: ^(data|stringData)$
+    age: age1v4nsu2yecf96sega4h32sznnurqwdngurhu3vkxmu2v7vr67zc8seq5nqn

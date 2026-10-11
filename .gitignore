@@ -1,0 +1,23 @@
+# Keys and decrypted secrets: never commit
+*.agekey
+*.age
+*.dec.yaml
+*.dec.yml
+*.decrypted.*
+.env
+.env.*
+
+# Private terms checked by script/check-denylist.sh (this repo is public)
+.denylist
+
+# Kubeconfigs
+kubeconfig*
+*.kubeconfig
+
+# Claude Code local (machine-specific) settings
+.claude/settings.local.json
+
+# OS / editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json

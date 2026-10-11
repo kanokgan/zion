@@ -1,0 +1,8 @@
+# apps/base/actual/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: actual
+  labels:
+    app.kubernetes.io/name: actual
+    app.kubernetes.io/instance: actual

@@ -1,0 +1,8 @@
+# apps/base/immich/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: immich
+  labels:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/instance: immich

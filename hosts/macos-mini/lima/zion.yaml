@@ -1,0 +1,67 @@
+# hosts/macos-mini/lima/zion.yaml
+# Lima VM that hosts the single-node k3s cluster `zion` on the Mac mini.
+# Host-level config, outside Flux (repo layout: ADR 0006).
+#
+# Start:  limactl start --name=zion hosts/macos-mini/lima/zion.yaml
+# Delete: limactl delete --force zion
+
+# Apple Virtualization.framework: faster than QEMU on Apple silicon, native virtiofs/vzNAT.
+vmType: vz
+arch: aarch64
+
+# Sized for the Mac mini M2: 8 cores, 8 GiB RAM, ~164 GiB free disk.
+# Standby role is Immich (ADR 0004); leave ~3 GiB for macOS. Disk is sparse, capped below free space.
+cpus: 4
+memory: 5GiB
+disk: 60GiB
+
+images:
+  # Ubuntu 24.04 LTS arm64 cloud image (same family as zion-old's Ubuntu host).
+  # `current` floats; once it boots, pin a dated release URL + sha256 digest here.
+  - location: https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-arm64.img
+    arch: aarch64
+
+# Share only the Immich standby library (ADR 0004); the macOS home directory stays private.
+# Writable because Immich must write after a failover; only one instance may use it at a time.
+# The drive must be attached when the VM starts, or Lima fails to start.
+mounts:
+  - location: /Volumes/HighSpeed2T/Immich/Backup
+    mountPoint: /mnt/immich-library
+    writable: true
+
+# containerd comes with k3s; don't install Lima's own.
+containerd:
+  system: false
+  user: false
+
+# Reach the VM from the Mac. vzNAT gives the VM a routable IP from the host side.
+networks:
+  - vzNAT: true
+
+portForwards:
+  # Kubernetes API on the Mac's localhost:6443
+  - guestPort: 6443
+    hostPort: 6443
+    hostIP: 127.0.0.1
+
+provision:
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -eux -o pipefail
+      command -v k3s >/dev/null && exit 0
+      # Pinned to match the legacy cluster (node k3s-master, v1.33.6+k3s1).
+      export INSTALL_K3S_VERSION="v1.33.6+k3s1"
+      # Traefik and ServiceLB are disabled until the ingress/DNS/TLS ADR decides.
+      curl -sfL https://get.k3s.io | sh -s - server \
+        --write-kubeconfig-mode 644 \
+        --disable traefik \
+        --disable servicelb \
+        --node-name zion
+
+probes:
+  - script: |
+      #!/bin/bash
+      set -eux -o pipefail
+      until sudo k3s kubectl get node zion 2>/dev/null | grep -q ' Ready'; do sleep 3; done
+    hint: "k3s node `zion` is not Ready yet. See: limactl shell zion sudo journalctl -u k3s"

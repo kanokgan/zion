@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(kubectl get:*)", "Bash(kubectl describe:*)", "Bash(kubectl logs:*)", "Bash(kubectl top:*)",
+      "Bash(kubectl explain:*)", "Bash(kubectl api-resources:*)", "Bash(kubectl version:*)",
+      "Bash(kubectl auth can-i:*)", "Bash(kubectl config get-contexts:*)",
+      "Bash(helm list:*)", "Bash(helm status:*)", "Bash(flux get:*)",
+      "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)",
+      "Bash(kustomize build:*)", "Bash(kubeconform:*)", "Bash(yamllint:*)"
+    ],
+    "deny": [
+      "Bash(git push:*)", "Bash(sudo:*)", "Bash(ssh:*)", "Bash(scp:*)", "Bash(rsync:*)",
+      "Read(./**/*.agekey)", "Read(./**/*.dec.yaml)", "Read(./**/.env)", "Read(./.denylist)","Read(./**/.env.*)",
+      "Read(~/.config/sops/**)", "Read(~/.kube/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash",
+        "hooks": [ { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-bash.sh" } ] }
+    ]
+  }
+}
