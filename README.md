@@ -6,6 +6,12 @@ The setup is being rebuilt from an ad hoc cluster into one that is fully defined
 
 Current progress: [docs/migration/README.md](docs/migration/README.md). Design decisions: [docs/decisions/](docs/decisions/).
 
+## Why "Zion"?
+
+I love *The Matrix* trilogy, and Zion is my favorite name from it: the last human city, hidden deep underground, where the people who left the Matrix hold out. The word itself comes from Hebrew and is often translated as "stronghold", and in the films it is the last bastion of humanity.
+
+That is what this project is for me. It is the stronghold for my self-hosted life: my photos, my budget, my media, running on hardware I own instead of on someone else's platform. It is also my single place to learn how to run it properly (Kubernetes, networking, backups, operations), and a portfolio that shows the work in the open.
+
 ## Architecture
 
 During the migration two hosts run side by side ([ADR 0002](docs/decisions/0002-parallel-cluster-migration.md)). The old cluster keeps serving production while services move to the new one, one at a time. Only one instance of a service is ever writable at once.
