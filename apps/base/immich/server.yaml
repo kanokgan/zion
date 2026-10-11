@@ -2,6 +2,8 @@
 # The Service name (immich-server) and namespace (immich) match the Lenovo so the Cloudflare tunnel backend
 # URL http://immich-server.immich.svc.cluster.local:80 resolves on either cluster (ADR 0004).
 # The library PVC (immich-library-pvc) is defined per cluster in apps/<cluster>/immich/.
+# The image tag is deliberately absent: each cluster overlay pins it in its `images:` block (server and machine
+# learning together). To upgrade Immich, see docs/services/immich.md.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,7 +29,7 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: immich-server
-          image: ghcr.io/immich-app/immich-server:v3.2.4
+          image: ghcr.io/immich-app/immich-server
           imagePullPolicy: IfNotPresent
           env:
             - name: IMMICH_PORT

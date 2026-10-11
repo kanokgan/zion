@@ -7,6 +7,11 @@ resources:
   - ../../base/actual
   - tailscale.yaml
   - tailscale-auth.sops.yaml
+# Actual version: the ONE place to edit for an upgrade (runbook: docs/services/actual.md). Same as the Lenovo
+# (26.10.0, verified by image digest 2026-10-12) until cutover.
+images:
+  - name: actualbudget/actual-server
+    newTag: 26.10.0
 patches:
   - target:
       kind: Deployment

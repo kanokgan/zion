@@ -60,6 +60,39 @@ Not automated. Outline:
 3. Restore the mini's latest database dump on the Lenovo, or accept that uploads made during the outage are only the files and re-scan them in. Decide this before the first real failover.
 4. Verify on the Lenovo, then move public traffic back and stop the mini's connector.
 
+## Runbook: upgrade Immich
+
+Immich releases often and some releases migrate the database, which a revert of the image tag does not undo. So an upgrade is one small commit, preceded by checks.
+
+**Where the version lives:** only in the `images:` block of `apps/zion/immich/kustomization.yaml` (each cluster overlay owns its own). The base manifests have no tag. Server and machine learning get the same tag; change both lines together.
+
+Risk: downtime during the rollout (`Recreate` strategy, plus startup migrations) and a possible one-way database migration. Rollback is a restore from the pre-upgrade dump, not just a revert. Do not upgrade the standby and the Lenovo on the same day: upgrade one, verify, then the other.
+
+Before:
+1. Read the release notes for every version you skip, looking for "breaking changes" and Postgres or VectorChord requirements. Upgrade one major or minor at a time.
+2. Confirm a fresh `immich-db-backup-*.sql.gz` exists in the library `backups/` folder, written within the last day, and note its file name (it carries the old version, which is what a rollback needs).
+3. Confirm the new tag exists: `https://github.com/immich-app/immich/pkgs/container/immich-server` (and for `immich-machine-learning`).
+
+Upgrade:
+1. Edit both `newTag` values in `apps/zion/immich/kustomization.yaml`.
+2. Check the render: `kustomize build apps/zion | grep 'image: ghcr.io/immich-app'` shows the new tag on both Immich images.
+3. Commit (`immich: upgrade to vX.Y.Z`), push, then `flux reconcile kustomization apps --with-source --context zion` to skip the wait.
+
+Verify:
+```sh
+kubectl --context zion rollout status deploy/immich-server -n immich
+kubectl --context zion get pods -n immich
+kubectl --context zion logs deploy/immich-server -n immich --tail=50
+flux get kustomization apps --context zion   # READY True
+```
+Then open the app, check the version under the user menu, and open a recent and an old photo.
+
+Rollback:
+- Pod never became ready and logs show no migration ran: revert the commit and push.
+- A migration ran (or you are unsure): scale the server to 0, revert the commit, bring up the old version on an empty database, and restore the pre-upgrade dump through Immich's restore flow (runbook above).
+
+Other Immich images (`postgres`, `redis`) are pinned in `apps/base/immich/` and are upgraded separately, only when the Immich release notes require it.
+
 ## Image pinning exception
 
 All Immich images are pinned. The Tailscale sidecar (`tailscale/tailscale:latest`, `imagePullPolicy: Always`) is a deliberate exception: it is a backward-compatible networking client and should pick up security fixes without a commit. Cost: starting the pod needs Docker Hub reachable, and a bad release could break `immich-standby` without a commit to point at. If that happens, pin a stable `vX.Y.Z` tag (check Docker Hub for what exists).

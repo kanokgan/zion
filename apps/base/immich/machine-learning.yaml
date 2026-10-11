@@ -23,7 +23,8 @@ spec:
     spec:
       containers:
         - name: immich-machine-learning
-          image: ghcr.io/immich-app/immich-machine-learning:v3.2.4
+          # Tag pinned per cluster in the overlay's `images:` block, together with immich-server.
+          image: ghcr.io/immich-app/immich-machine-learning
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:

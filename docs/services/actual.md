@@ -33,6 +33,33 @@ Optional later: a CronJob that copies `/data` to the NAS over SFTP on the LAN (n
 
 Note: importing creates a new budget file ID on the new server. Devices that already hold a copy have to re-download. For the real cutover, copying the `/data` folder from the Lenovo keeps the same IDs and logins.
 
+## Runbook: upgrade Actual
+
+Actual migrates its data files when a newer version starts, and an older version may refuse to open migrated data. Rolling back means restoring a backup, not just reverting the tag.
+
+**Where the version lives:** only in the `images:` block of `apps/zion/actual/kustomization.yaml`. The base manifest has no tag.
+
+Before:
+1. Read the release notes for breaking changes (`https://actualbudget.org/docs/releases`).
+2. Export the budget (Settings, Export data) and keep the zip on the NAS at `/ZionLabs/Actual/Backup`.
+3. Confirm the tag exists on Docker Hub (`actualbudget/actual-server`).
+4. Until cutover, keep the mini on the same version as the Lenovo unless you are deliberately testing the new one there first.
+
+Upgrade:
+1. Edit `newTag` in `apps/zion/actual/kustomization.yaml`.
+2. Check the render: `kustomize build apps/zion | grep 'image: actualbudget'`.
+3. Commit (`actual: upgrade to X.Y.Z`), push, then `flux reconcile kustomization apps --with-source --context zion`.
+
+Verify:
+```sh
+kubectl --context zion rollout status deploy/actual -n actual
+kubectl --context zion logs deploy/actual -n actual --tail=50
+flux get kustomization apps --context zion   # READY True
+```
+Then open the app and check accounts and recent transactions.
+
+Rollback: revert the commit if the pod never became healthy. If data was migrated, restore the exported zip into the old version on a fresh volume.
+
 ## Cutover (yours to run)
 
 Not planned in detail yet. Outline: scale the Lenovo's Actual to 0, copy its `/data` into the mini's volume (or import the final export), verify on `actual-standby`, repoint `actual.kanokgan.com` and the Tailscale name, keep the old data about 2 weeks, then remove it from the Lenovo.

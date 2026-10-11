@@ -11,6 +11,13 @@ resources:
   - tailscale.yaml
   - secret.sops.yaml
   - tailscale-auth.sops.yaml
+# Immich version: the ONE place to edit for an upgrade (runbook: docs/services/immich.md). Server and machine
+# learning must always have the same tag, so change both lines together.
+images:
+  - name: ghcr.io/immich-app/immich-server
+    newTag: v3.2.4
+  - name: ghcr.io/immich-app/immich-machine-learning
+    newTag: v3.2.4
 patches:
   - target:
       kind: Deployment

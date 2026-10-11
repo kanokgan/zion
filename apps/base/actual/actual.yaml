@@ -1,6 +1,5 @@
 # apps/base/actual/actual.yaml
-# Same version as the Lenovo (26.10.0, verified by image digest 2026-10-12). Data is a local volume; each
-# cluster has its own separate Actual server (no shared storage).
+# Data is a local volume; each cluster has its own separate Actual server (no shared storage).
 # The Service name (actual) and namespace (actual) match the Lenovo so a Cloudflare tunnel backend URL
 # like http://actual.actual.svc.cluster.local:5006 would resolve on either cluster.
 apiVersion: v1
@@ -42,7 +41,8 @@ spec:
     spec:
       containers:
         - name: actual
-          image: actualbudget/actual-server:26.10.0
+          # Tag pinned per cluster in the overlay's `images:` block (upgrade runbook: docs/services/actual.md).
+          image: actualbudget/actual-server
           imagePullPolicy: IfNotPresent
           env:
             - name: ACTUAL_SERVER_FILES
