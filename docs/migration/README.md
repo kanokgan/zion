@@ -70,6 +70,7 @@ Only after every service has cut over and finished its soak.
 - [ ] Public domain and Tailscale hostnames confirmed pointing at `zion`
 - [ ] Old NAS paths / PVC data archived or deleted (explicit decision)
 - [ ] `zion-old` shut down, then wiped or repurposed; rebuild the Lenovo as `zion` from this repo and rename the mini's cluster to `zion-standby`
+- [ ] Rebuilt Lenovo follows the machine naming convention: `ubuntu-extreme` (today `k3s-master`) for the hostname, Tailscale device, Cloudflare tunnel (replaces `home-brain`) and `hosts/ubuntu-extreme/`
 
 ## Next steps
 1. Immich standby on the mini: manifests are in the repo, the restore test passed (2026-10-11), and the server runs at 1 replica on `immich-standby`. Remaining: public failover path (NodePort Service + Lima port forward for the mini's `macos-mini` tunnel, see ADR 0004), failback decision.

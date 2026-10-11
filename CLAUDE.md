@@ -19,7 +19,7 @@ I'm a software engineer, so skip basic programming explanations. Do teach infra,
 - Problem: the setup grew ad hoc from AI-generated commands. There's no single source of truth, no consistent conventions, and it's not well documented. The goal is to rebuild it into a clean, well-organized, reproducible setup **without losing data or breaking working services**.
 
 ## Environment
-- **`zion-old`**: the legacy k3s cluster on the X1 Extreme2. Still serves production (including the public domain used by family for Immich). Read-only reference until decommissioned.
+- **`zion-old`**: the legacy k3s cluster on the X1 Extreme2 (host and node `k3s-master`, a name from before the naming convention). Still serves production (including the public domain used by family for Immich). Read-only reference until decommissioned. When the Lenovo is rebuilt, the machine becomes `ubuntu-extreme`.
 - **`zion`**: the new cluster, built ONLY from this repo, on a Mac mini M2 (ARM64): k3s in a Lima VM ([ADR 0003](docs/decisions/0003-kubernetes-on-macos.md)). When the Lenovo is rebuilt from this repo it becomes `zion`, and the mini's cluster becomes `zion-standby`, a warm standby for Immich ([ADR 0004](docs/decisions/0004-mini-as-immich-standby.md)).
 - Plex and Jellyfin run natively on the mini, outside Kubernetes ([ADR 0008](docs/decisions/0008-native-media-servers-on-mini.md)); host-level setup is in [hosts/macos-mini/](hosts/macos-mini/README.md).
 - The two run in parallel. `zion` uses Tailscale test endpoints with disposable data copies until each service's cutover. Never two instances writable against the same data.

@@ -27,7 +27,7 @@ Rules:
 
 ## Consequences
 - Adding a cluster means adding `clusters/<name>/` and overlays, not copying apps.
-- The Lenovo's host setup, if it ever needs a file, gets a sibling named the same way: `hosts/<os>-<nickname>/`.
+- The Lenovo (today `k3s-master`, named before this convention) becomes `ubuntu-extreme` when it is rebuilt; its host setup, if it needs files, goes in `hosts/ubuntu-extreme/`.
 - CLAUDE.md "Repo layout" should point here.
 
 Amended 2026-10-12: host-level setup moved from `infra/mini/` to `hosts/macos-mini/`. Next to `infrastructure/`, the name `infra/` did not say which one Flux applies, and the folder now follows the machine naming convention.
