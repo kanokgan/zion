@@ -15,9 +15,9 @@ resources:
 # learning must always have the same tag, so change both lines together.
 images:
   - name: ghcr.io/immich-app/immich-server
-    newTag: v3.2.4
+    newTag: v3.3.1
   - name: ghcr.io/immich-app/immich-machine-learning
-    newTag: v3.2.4
+    newTag: v3.3.1
 patches:
   - target:
       kind: Deployment
