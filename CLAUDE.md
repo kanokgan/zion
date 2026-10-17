@@ -19,10 +19,10 @@ I'm a software engineer, so skip basic programming explanations. Do teach infra,
 - Problem: the setup grew ad hoc from AI-generated commands. There's no single source of truth, no consistent conventions, and it's not well documented. The goal is to rebuild it into a clean, well-organized, reproducible setup **without losing data or breaking working services**.
 
 ## Environment
-- **`zion-old`**: the legacy k3s cluster on the X1 Extreme2 (host and node `k3s-master`, a name from before the naming convention). Still serves production (including the public domain used by family for Immich). Read-only reference until decommissioned. When the Lenovo is rebuilt, the machine becomes `ubuntu-extreme`.
-- **`zion`**: the new cluster, built ONLY from this repo, on a Mac mini M2 (ARM64): k3s in a Lima VM ([ADR 0003](docs/decisions/0003-kubernetes-on-macos.md)). When the Lenovo is rebuilt from this repo it becomes `zion`, and the mini's cluster becomes `zion-standby`, a warm standby for Immich ([ADR 0004](docs/decisions/0004-mini-as-immich-standby.md)).
+- **`extreme`**: the cluster on the Lenovo X1 Extreme2 (host `ubuntu-extreme`), rebuilt ONLY from this repo on 2026-10-17 with the OS kept ([ADR 0009](docs/decisions/0009-rebuild-lenovo-in-place.md)). It replaced the legacy cluster `zion-old`, which was wiped. Actual Budget runs here; Immich moves here at its cutover (runbook in [docs/services/immich.md](docs/services/immich.md)).
+- **`zion`**: the cluster on a Mac mini M2 (ARM64), built ONLY from this repo: k3s in a Lima VM ([ADR 0003](docs/decisions/0003-kubernetes-on-macos.md)). It serves Immich until that cutover, then becomes the warm standby ([ADR 0004](docs/decisions/0004-mini-as-immich-standby.md)). It is to be renamed `mini` after the cutover. Clusters are named after the machine, not the role, because roles swap.
 - Plex and Jellyfin run natively on the mini, outside Kubernetes ([ADR 0008](docs/decisions/0008-native-media-servers-on-mini.md)); host-level setup is in [hosts/macos-mini/](hosts/macos-mini/README.md).
-- The two run in parallel. `zion` uses Tailscale test endpoints with disposable data copies until each service's cutover. Never two instances writable against the same data.
+- Never two instances writable against the same data: a service's old instance is scaled to 0 before the new one takes over, and only one machine writes to a given NAS path.
 - NAS: Synology DS923+. Network: Tailscale; domain kanokgan.com via Cloudflare.
 - Strategy and rationale: [ADR 0002](docs/decisions/0002-parallel-cluster-migration.md). Progress tracker: [docs/migration/README.md](docs/migration/README.md).
 
@@ -61,7 +61,7 @@ I'm a software engineer, so skip basic programming explanations. Do teach infra,
 
 ## Hard rules for Claude
 - Never mutate a cluster. Only read-only commands (`get`, `describe`, `logs`, `top`, `auth can-i`). Changes happen via commits + GitOps.
-- Always pass `--context` explicitly (`zion` or `zion-old`); never rely on the current context.
+- Always pass `--context` explicitly (`extreme`, or `zion` for the mini's cluster until it is renamed `mini`); never rely on the current context.
 - Never push. I review and push.
 - Never read, print, or decrypt secrets or keys. Refer to secrets by name only and use placeholders.
 - Never commit plaintext secrets.
@@ -69,13 +69,13 @@ I'm a software engineer, so skip basic programming explanations. Do teach infra,
 - If `.claude/hooks/guard-bash.sh` blocks something, explain what you wanted and why; don't rephrase to bypass it.
 
 ## Per-service migration workflow
-1. **Inventory** the service on `zion-old` (read-only): workloads, PVCs, config, ingress, secrets by name.
+1. **Inventory** the service on the source cluster (read-only): workloads, PVCs, config, ingress, secrets by name.
 2. **Define in repo** + write the service doc (what it is, data, backup/restore).
-3. **Deploy to `zion`** on a Tailscale test endpoint with disposable data.
-4. **Backup + restore test** on `zion`.
-5. **Cutover** (I run it): scale old to 0, final backup, restore into `zion`, verify, repoint the same hostnames (Tailscale + Cloudflare).
-6. **Soak** about 2 weeks with old scaled to 0 and its data kept.
-7. **Remove** the service from `zion-old`.
+3. **Deploy to the target cluster** on a Tailscale test endpoint with disposable data.
+4. **Backup + restore test** on the target.
+5. **Cutover** (I run it): scale the source to 0, final backup, restore into the target, verify, repoint the same hostnames (Tailscale + Cloudflare).
+6. **Soak** about 2 weeks by default (shortened when I say so) with the source scaled to 0 and its data kept.
+7. **Remove** the service from the source cluster.
 
 ## Definition of done for a service
 - In the repo and deployed via GitOps only
@@ -106,12 +106,12 @@ This repo is public on GitHub (since 2026-10-12) as a portfolio. Every file and 
 
 # Repository contents (current)
 
-- `clusters/zion/`: Flux bootstrap files (`flux-system/`, generated, do not edit) and `apps.yaml`, which applies `apps/zion/` with SOPS decryption.
-- `apps/base/`: Immich and Actual Budget. `apps/zion/`: their overlays for the mini (Immich standby, Actual test endpoint, Tailscale sidecars, encrypted secrets).
-- `infrastructure/`: empty until the ingress, storage and backup ADRs are decided.
-- `hosts/macos-mini/`: the Lima VM definition (`lima/zion.yaml`) and the host-level setup outside Flux (`README.md`).
+- `clusters/extreme/` (the Lenovo) and `clusters/zion/` (the mini, to be renamed `mini`): Flux bootstrap files (`flux-system/`, generated, do not edit) and the Kustomizations (`apps.yaml`, plus `infrastructure.yaml` on `extreme`), which apply the folders below with SOPS decryption.
+- `apps/base/`: Immich and Actual Budget. `apps/extreme/` and `apps/zion/`: their per-cluster overlays (library volume, GPU or CPU image, Tailscale sidecars, NodePorts, encrypted secrets).
+- `infrastructure/`: cluster-wide components. Today only the NVIDIA device plugin for the Lenovo (`base/`, `extreme/`); the ingress, storage and backup ADRs are still pending.
+- `hosts/macos-mini/` and `hosts/ubuntu-extreme/`: the host-level setup outside Flux (Lima VM, native apps, k3s install, GPU notes, `cloudflared`, the nightly NAS backup job).
 - `docs/decisions/`: ADRs. `docs/services/`: per-service docs with backup and restore. `docs/migration/`: migration tracker. `.claude/`: Claude Code settings and the Bash guard hook (needs `jq`).
 - [script/auto-mount.sh](script/auto-mount.sh): macOS helper that mounts the NAS SMB shares over Tailscale; not part of the cluster.
 - `.pre-commit-config.yaml`, [script/check-denylist.sh](script/check-denylist.sh), `.github/workflows/secret-scan.yaml`: public-repo guardrails (see "Public repository").
 
-There is no build system, linter, or test suite yet. Validate manifests with `kustomize build apps/zion` before committing.
+There is no build system, linter, or test suite yet. Validate manifests with `kustomize build apps/extreme` and `kustomize build apps/zion` (or `kubectl kustomize`) before committing.

@@ -1,19 +1,19 @@
 # Immich
 
-Photo library used daily by family. Since 2026-10-17 the Mac mini (`zion`) serves `immich.kanokgan.com`; the Lenovo (`zion-old`, node `k3s-master`) is scaled to 0 and kept as a rollback until it is wiped and rebuilt (ADR 0004). Immich is the one service that must not go down.
+Photo library used daily by family. Since 2026-10-17 the Mac mini (`zion`) serves `immich.kanokgan.com` while the Lenovo is rebuilt from this repo as the cluster `extreme` (ADR 0009); moving production back to the Lenovo is the cutover runbook below, and the mini then returns to standby (ADR 0004). The old Lenovo cluster (`zion-old`) was wiped on 2026-10-17, so its library and databases are gone: the NAS and the mini's NVMe hold the data. Immich is the one service that must not go down.
 
 ## What runs where
 
-| | Lenovo (`zion-old`, scaled to 0 since 2026-10-17) | Mac mini (`zion`, production since 2026-10-17) |
+| | Lenovo (`extreme`, rebuilt 2026-10-17, server held at 0 until the cutover) | Mac mini (`zion`, production since 2026-10-17) |
 |---|---|---|
-| Server | `immich-server:v3` (resolves to v3.2.4), GPU | `immich-server:v3.2.4`, 1 replica (also at `https://immich-standby.dove-komodo.ts.net`) |
-| Postgres | `immich/postgres:14-vectorchord0.4.3-pgvectors0.2.0`, 20Gi local-path | same image, 20Gi local-path, restored from the Lenovo's dump on 2026-10-17 |
+| Server | `immich-server:v3.2.4`, one GPU slice (transcoding) | `immich-server:v3.2.4`, 1 replica (also at `https://immich-standby.dove-komodo.ts.net`) |
+| Postgres | `immich/postgres:14-vectorchord0.4.3-pgvectors0.2.0`, 20Gi local-path, empty until the restore | same image, 20Gi local-path, restored from the Lenovo's dump on 2026-10-17 |
 | Redis | `redis:6.2-alpine` | same |
-| Machine learning | `release-cuda`, GPU | CPU image, **0 replicas, disabled** (not needed on the standby) |
-| Library | 1Ti local-path PVC on the Lenovo's NVMe | external NVMe `HighSpeed2T`, folder `Immich/Backup`, shared into the Lima VM at `/mnt/immich-library` |
-| Public access | Cloudflare tunnel `home-brain`; the `immich.kanokgan.com` route was removed on 2026-10-17 | `immich.kanokgan.com` via tunnel `macos-mini` (host `cloudflared`), service `http://localhost:30283` -> Lima port forward -> NodePort Service `immich-server-nodeport` (`apps/zion/immich/nodeport.yaml`) |
+| Machine learning | `immich-machine-learning:v3.2.4-cuda`, 1 replica on a GPU slice | CPU image, **0 replicas, disabled** (no GPU) |
+| Library | `/srv/immich` on the Lenovo's disk (host directory, static PV); being copied from the NAS | external NVMe `HighSpeed2T`, folder `Immich/Backup`, shared into the Lima VM at `/mnt/immich-library` |
+| Public access | tunnel `ubuntu-extreme` (host `cloudflared`); `immich.kanokgan.com` is added at the cutover | `immich.kanokgan.com` via tunnel `macos-mini` (host `cloudflared`), service `http://localhost:30283` -> Lima port forward -> NodePort Service `immich-server-nodeport` (`apps/zion/immich/nodeport.yaml`) |
 
-Manifests: `apps/base/immich/` (shared) and `apps/zion/immich/` (standby overlay and library volume). Secrets: `apps/zion/immich/secret.sops.yaml` (SOPS, ADR 0007).
+Manifests: `apps/base/immich/` (shared), `apps/extreme/immich/` and `apps/zion/immich/` (per-cluster overlays: library volume, Tailscale sidecar, NodePort, image tags). Secrets: `apps/*/immich/secret.sops.yaml` (SOPS, ADR 0007).
 
 ## Data and backups
 

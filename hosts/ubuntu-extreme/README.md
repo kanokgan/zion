@@ -1,8 +1,8 @@
-# ubuntu-extreme (the Lenovo, today host and node `k3s-master`)
+# ubuntu-extreme (the Lenovo: host `ubuntu-extreme`, cluster `extreme`)
 
-Ubuntu Server 24.04 on a Lenovo X1 Extreme Gen 2 with an NVIDIA GeForce GTX 1650 (4 GB). Runs `zion-old` (k3s). The OS is kept when the machine is rebuilt; only k3s and everything on top of it is removed and recreated from this repo as the cluster `extreme` (ADR 0009). Host-level setup lives here, outside Flux (ADR 0006).
+Ubuntu Server 24.04 on a Lenovo X1 Extreme Gen 2 with an NVIDIA GeForce GTX 1650 (4 GB). Until 2026-10-17 the host was named `k3s-master` and ran the legacy cluster `zion-old`. The OS was kept; k3s and everything on top of it was removed and recreated from this repo as the cluster `extreme` (ADR 0009). Host-level setup lives here, outside Flux (ADR 0006).
 
-This file records what exists on 2026-10-17, so the rebuild does not depend on memory, then the rebuild runbook.
+This file records what was found on 2026-10-17 (the "State found" table and the incident notes are history), then the rebuild runbook, which was followed that day.
 
 ## Access
 

@@ -1,10 +1,10 @@
 # Migration status
 
-Rebuilding Zion Lab from the ad hoc setup into a Git-managed, reproducible one. Strategy ([ADR 0002](../decisions/0002-parallel-cluster-migration.md)): build a new cluster `zion` only from this repo, in parallel with the legacy cluster `zion-old` (node `k3s-master`, k3s v1.33.6+k3s1), and migrate one service at a time.
+Rebuilding Zion Lab from the ad hoc setup into a Git-managed, reproducible one. Strategy ([ADR 0002](../decisions/0002-parallel-cluster-migration.md)): build new clusters only from this repo and migrate one service at a time. The legacy cluster `zion-old` (k3s on the Lenovo) was wiped on 2026-10-17 and the Lenovo rebuilt in place as `extreme` ([ADR 0009](../decisions/0009-rebuild-lenovo-in-place.md)); the Mac mini's cluster `zion` carried production in between.
 
-`zion-old` keeps serving production (including the public domain) until each service is cut over. `zion` uses Tailscale test endpoints with disposable data copies until then. Never two instances writable against the same data.
+Never two instances writable against the same data. Clusters are named after the machine (`extreme`, later `mini` for today's `zion`), not the role.
 
-The Mac mini's long-term role is a warm standby for Immich ([ADR 0004](../decisions/0004-mini-as-immich-standby.md)). Once the Lenovo is rebuilt from this repo it becomes `zion` and the mini's cluster is renamed `zion-standby`.
+The Mac mini's long-term role is a warm standby for Immich ([ADR 0004](../decisions/0004-mini-as-immich-standby.md)); Immich returns to the Lenovo at its cutover.
 
 Last updated: 2026-10-17
 
@@ -13,7 +13,8 @@ Last updated: 2026-10-17
 - [x] Repo + ADR scaffolding
 - [x] Synced to claude.ai
 - [x] Guardrails committed (`.claude/settings.json`, `.claude/hooks/guard-bash.sh`, `.gitignore`)
-- [ ] Read-only kubeconfig for Claude Code on `zion-old` (note: creates a ServiceAccount outside Git)
+- [x] `zion-old` (the cluster this item was for) was wiped on 2026-10-17
+- [ ] Read-only credentials for Lens and Claude Code on `extreme` and `zion` (a ServiceAccount with a read-only role, defined in Git, token created by hand)
 
 ## Phase 1: Platform on `zion` (Mac mini)
 
@@ -54,27 +55,39 @@ Migration order (ADR 0002): Jellyfin, Plex, Actual Budget, Immich. The Immich st
 | Actual Budget | yes (10Gi PVC `actual-data`, mounted at `/data`) | no: manual export only | export/import into the mini worked, 2026-10-12 (not a restore of an automated backup) | yes (`apps/base/actual`, `apps/zion/actual`) | yes (26.10.0, Tailscale sidecar, no secrets besides the auth key) | yes (`https://actual-standby.dove-komodo.ts.net`) | yes, 2026-10-17 (first to the mini, then back to the rebuilt Lenovo, cluster `extreme`; `actual.kanokgan.com` via tunnel `ubuntu-extreme`) | skipped by choice | yes, on `extreme`; the mini's copy is to be stopped |
 | Immich | yes (library 1Ti, Postgres 20Gi) | partly: nightly Immich DB dump on the NVMe; the mini to NAS nightly rclone job (04:00) is not built yet, so new uploads have one copy until it is | yes, 2026-10-11 (standby on mini, port-forward only; restored from the Oct 11 dump, recent photos verified) | yes (`apps/base/immich`, `apps/zion/immich`) | yes (see ADR 0004) | yes | yes, 2026-10-17 (restored from the Lenovo's dump; `immich.kanokgan.com` on the mini, Lenovo scaled to 0) | skipped by choice | no |
 
-Found on `zion-old` and not in the migration plan yet; each needs a decision (migrate, replace, or drop):
-- `monitoring`: kube-prometheus, Grafana, Alertmanager (PVCs)
-- `web-scraper`: scraper data 50Gi, Tailscale sidecar state
-- `cloudflare`: `cloudflared` DaemonSet, token-based tunnel `home-brain` (routes live in the Cloudflare dashboard, not in Git; the `cloudflared-config` ConfigMap is stale). Not migrated: it keeps serving Immich and Actual until their cutover, and is rebuilt from the repo when the Lenovo is wiped. The Lenovo's Jellyfin is not migrated either (ADR 0008).
+Found on `zion-old`, and decided when it was wiped on 2026-10-17:
+- `monitoring` (kube-prometheus, Grafana, Alertmanager) and `web-scraper` (data 50Gi): dropped, their data discarded. To be rebuilt from Git, properly, and mirrored on the mini.
+- `cloudflare`: the in-cluster `cloudflared` and the tunnel `home-brain` are replaced by `cloudflared` on the host of each machine (tunnels `macos-mini` and `ubuntu-extreme`). The `home-brain` tunnel and its leftover DNS records are still to be deleted in the dashboard. The Lenovo's Jellyfin was not migrated (ADR 0008).
 
 "unknown" means the live cluster hasn't been fully inspected yet.
 
-## Phase 3: Decommission `zion-old`
+## Phase 3: Finish the move to `extreme` (after the Immich cutover)
 
-Only after every service has cut over and finished its soak.
+`zion-old` was wiped on 2026-10-17 and rebuilt from this repo as the cluster `extreme` on the host `ubuntu-extreme` (ADR 0009). Actual already runs there. What is left, in order:
 
-- [ ] All services: soak done, data kept until here
-- [ ] Final backups of everything on `zion-old` verified restorable
-- [ ] Public domain and Tailscale hostnames confirmed pointing at `zion`
-- [ ] Old NAS paths / PVC data archived or deleted (explicit decision)
-- [ ] `zion-old` shut down, then wiped or repurposed; rebuild the Lenovo as `zion` from this repo and rename the mini's cluster to `zion-standby`
-- [ ] Rebuilt Lenovo follows the machine naming convention: `ubuntu-extreme` (today `k3s-master`) for the hostname, Tailscale device, Cloudflare tunnel (replaces `home-brain`) and `hosts/ubuntu-extreme/`
+- [ ] Immich cutover to the Lenovo, following the runbook in [docs/services/immich.md](../services/immich.md) (the library is being copied; the server is held at 0 replicas until then)
+- [ ] The Lenovo's nightly backup timer enabled and the mini's job disabled; first `rclone check` clean (`hosts/ubuntu-extreme/backup/`)
+- [ ] Mini: stop its Actual and its Immich server (replicas 0) and rename their sidecars to `actual-macos-mini` and `immich-macos-mini` in the same commits (no live pod is restarted by it at that point). Keep the data a few days
+- [ ] Cloudflare: delete the tunnel `home-brain` and its leftover DNS records. Tailscale: delete the stale device entries
+- [ ] **Rename the mini's cluster `zion` to `mini`** (cluster name = machine nickname, ADR 0009), in the order below
+- [ ] Docs sweep after the rename: the naming notes in ADRs 0004, 0006, 0007 and 0009, CLAUDE.md contexts (`extreme`, `mini`), `docs/services/*` (`apps/zion-old/` was already deleted on 2026-10-17)
+- [ ] Later, each its own change: external libraries on the Lenovo (Flux `postBuild.substituteFrom` from a SOPS secret, because their paths hold real names), tighten ufw, make the library PV's declared size realistic (1Ti declared, 1.3 TB real), a read-only Lens credential for both clusters, monitoring and the web-scraper rebuilt in Git (mirrored on the mini), Immich upgrade to v3.3.x after reading the release notes, and the mini's standby refresh procedure (NAS to its NVMe, then the DB restore)
+
+### Renaming the mini's cluster (`zion` to `mini`), safe order
+
+Done after the cutover, with the mini idle, because the cutover edits `apps/zion/…`. A plain `git mv` is not safe: the mini's Flux has `./clusters/zion` in its own sync object, which lives in the folder that would move. Flux would stop syncing (the path is missing) and could not repair itself without a manual step.
+
+1. Copy `clusters/zion` to `clusters/mini` and `apps/zion` to `apps/mini`, keeping the old folders. In the copy change only: `path: ./apps/mini` in `clusters/mini/apps.yaml`, `path: ./clusters/mini` in `clusters/mini/flux-system/gotk-sync.yaml`, and the `zion-apps` style labels. Push. The mini still reads the old path, so nothing changes yet.
+2. On the mini, once: apply `clusters/mini/flux-system/gotk-sync.yaml` (the one imperative step). The `apps` Kustomization has the same name and renders identical content, so nothing is pruned.
+3. Verify: all Kustomizations Ready, the same pods with no new restarts.
+4. Delete `clusters/zion` and `apps/zion`; push; verify again.
+5. Rename the kubectl context (`kubectl config rename-context zion mini`) everywhere it exists, including the Lens kubeconfig.
+
+Do not rename the Lima VM or the k3s node (both are called `zion`): local-path volumes are tied to the node name. Leave them and note it in `hosts/macos-mini/`.
 
 ## Next steps
-1. Immich standby on the mini: manifests are in the repo, the restore test passed (2026-10-11), and the server runs at 1 replica on `immich-standby`. Remaining: public failover path (NodePort Service + Lima port forward for the mini's `macos-mini` tunnel, see ADR 0004), failback decision.
-2. Actual Budget: choose the cutover method (folder copy vs export/import), test it on `actual-standby`, then cut over.
-3. Plex and Jellyfin on the mini: confirm how they start, where their config and media live, and how they are backed up (`hosts/macos-mini/`).
-4. Read-only kubeconfig for `zion-old`, then decide on monitoring and web-scraper (migrate, replace, or drop).
-5. Remaining platform ADRs: ingress/DNS/TLS, NAS storage pattern, backups, FileVault.
+1. Immich: finish the library copy to the Lenovo (tmux session `copy`, about 36 hours because the Lenovo's wired link negotiates 100 Mb/s), then the cutover runbook.
+2. Before that cutover: the mini's own nightly NAS backup job, the Lenovo's backup job dry run, and the fresh Actual export are the open prerequisites.
+3. Then Phase 3 above, in order.
+4. Plex and Jellyfin on the mini: confirm how they start, where their config and media live, and how they are backed up (`hosts/macos-mini/`).
+5. Remaining platform ADRs: ingress/DNS/TLS, NAS storage pattern, backups, FileVault (the mini cannot restart unattended with FileVault on, and it serves Immich until the cutover).

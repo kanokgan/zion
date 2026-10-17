@@ -39,3 +39,6 @@ Build `zion` in parallel from the repo only, and migrate one service at a time w
 - `zion` app state gets its own NAS paths, separate from `zion-old`. Media may be mounted read-only by both clusters.
 - Two sets of endpoints exist during the migration (production hostnames on `zion-old`, Tailscale test endpoints on `zion`), and hostnames are repointed per service at cutover.
 - Revisit when the host for `zion` changes, and when the last service leaves `zion-old` (decommission).
+
+## Update 2026-10-17
+`zion-old` was decommissioned early: its Immich and Actual moved to the Mac mini, and the Lenovo was then wiped and rebuilt in place from this repo as the cluster `extreme` ([ADR 0009](0009-rebuild-lenovo-in-place.md)). The soak period was skipped by choice, relying on the NAS copy and its snapshots. Cluster names now follow the machine, so the "`zion` is the new cluster" wording above refers to what is today the mini's cluster.

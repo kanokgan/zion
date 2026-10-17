@@ -2,7 +2,7 @@
 
 My homelab: self-hosted photos (Immich), budgeting (Actual Budget), and media (Plex, Jellyfin), reachable privately over Tailscale and publicly through Cloudflare on `kanokgan.com`. Storage lives on a Synology DS923+.
 
-The setup is being rebuilt from an ad hoc cluster into one that is fully defined in Git and reproducible. **This repo is the single source of truth**: the new cluster is built only from it, through Flux. The few things that live outside Kubernetes (the Lima VM, the native media apps, the Cloudflare connector on the Mac mini, and the one decryption key) are documented here as manual steps.
+The setup was rebuilt from an ad hoc cluster into one that is fully defined in Git and reproducible. **This repo is the single source of truth**: both clusters are built only from it, through Flux. The few things that live outside Kubernetes (each machine's host setup, the Lima VM and native media apps on the Mac mini, the Cloudflare connector on each machine, and the one decryption key) are documented here as manual steps.
 
 Current progress: [docs/migration/README.md](docs/migration/README.md). Design decisions: [docs/decisions/](docs/decisions/).
 
@@ -14,53 +14,60 @@ That is what this project is for me. It is the stronghold for my self-hosted lif
 
 ## Architecture
 
-During the migration two hosts run side by side ([ADR 0002](docs/decisions/0002-parallel-cluster-migration.md)). The old cluster keeps serving production while services move to the new one, one at a time. Only one instance of a service is ever writable at once.
+Two machines each run a single-node k3s cluster built from this repo: the Lenovo (cluster `extreme`) and the Mac mini (cluster `zion`, to be renamed `mini`). Clusters are named after the machine, not its role, because roles swap ([ADR 0009](docs/decisions/0009-rebuild-lenovo-in-place.md)). Only one instance of a service is ever writable at once.
+
+State on 2026-10-17: the old Lenovo cluster (`zion-old`) was wiped and rebuilt from this repo. Actual Budget runs on the Lenovo. Immich is still served from the Mac mini until its library finishes copying to the Lenovo and the cutover runs ([runbook](docs/services/immich.md)); afterwards the mini becomes the standby ([ADR 0004](docs/decisions/0004-mini-as-immich-standby.md)).
 
 Legend: solid arrows are requests, dashed arrows are data copies or mounts.
 
-### Today: `zion-old` on the Lenovo (production)
+### Lenovo: `extreme` (rebuilt from this repo)
 
-The original cluster. It serves family today, but it grew by hand and can't be rebuilt from Git, which is why it's being replaced.
+Ubuntu Server stays; k3s is reinstalled from [hosts/ubuntu-extreme/](hosts/ubuntu-extreme/README.md), and Flux applies everything in `clusters/extreme/`. Public traffic comes in through `cloudflared` running on the host, which reaches the apps on NodePorts. The GPU is shared between pods by time-slicing.
 
 ```mermaid
 flowchart LR
+  gh["GitHub<br/>this repo"]
   internet["Family<br/>(internet)"]
   me["My devices<br/>(tailnet)"]
   cf["Cloudflare<br/>kanokgan.com"]
   nas[("Synology DS923+")]
 
-  subgraph lenovo["Lenovo X1 Extreme2 · Ubuntu · k3s (zion-old) · GPU"]
-    cfd["cloudflared<br/>tunnel: home-brain"]
-    subgraph immichns["immich"]
-      imsrv["immich-server"]
-      imml["machine learning<br/>(CUDA)"]
-      imdata[("Postgres + photo library<br/>local NVMe")]
-      imsync["nightly backup job<br/>rclone copy 04:00"]
+  subgraph lenovo["Lenovo X1 Extreme2 · Ubuntu · GPU · host: ubuntu-extreme"]
+    cfd["cloudflared<br/>tunnel: ubuntu-extreme"]
+    lib[("Immich library<br/>/srv/immich on the host disk")]
+    bk["nightly backup job<br/>rclone copy 04:00<br/>(enabled at the Immich cutover)"]
+    subgraph k3s["k3s · cluster: extreme"]
+      flux["Flux"]
+      gpu["NVIDIA device plugin<br/>time-sliced GPU"]
+      subgraph actualns["actual"]
+        actual["Actual Budget<br/>+ Tailscale sidecar"]
+      end
+      subgraph immichns["immich: cutover pending"]
+        imsrv["immich-server<br/>held at 0 replicas"]
+        imml["machine learning<br/>(CUDA)"]
+        impg[("Postgres")]
+      end
     end
-    actual["Actual Budget<br/>+ Tailscale sidecar"]
-    jf["Jellyfin"]
-    plex["Plex"]
-    other["monitoring<br/>web-scraper"]
   end
 
+  gh -->|pull over HTTPS| flux
+  flux -->|apply + decrypt secrets| actual
+  flux -->|apply + decrypt secrets| imsrv
   internet -->|HTTPS| cf -->|tunnel| cfd
-  cfd --> imsrv
   cfd --> actual
-  cfd --> jf
   me -->|tailnet| actual
-  me -->|tailnet| other
   imsrv --> imml
-  imsrv --> imdata
-  imdata -.-> imsync
-  imsync -.->|SFTP over Tailscale| nas
-  nas -.->|external libraries| imsrv
+  imsrv --> impg
+  imml --> gpu
+  lib -.->|mounted| imsrv
+  nas -.->|library copy, in progress| lib
+  lib -.-> bk
+  bk -.->|SFTP over Tailscale| nas
 ```
 
-### New: `zion` on the Mac mini (built from this repo)
+### Mac mini: `zion` (serves Immich until the cutover)
 
-A Lima VM runs k3s, and Flux applies everything in `clusters/zion/` from this repo. Secrets are committed encrypted with SOPS + age and decrypted in the cluster. Services here use Tailscale test addresses and disposable data until each one is cut over.
-
-Plex and Jellyfin run as native macOS apps for hardware transcoding ([ADR 0008](docs/decisions/0008-native-media-servers-on-mini.md)). Their setup is documented in [hosts/macos-mini/](hosts/macos-mini/README.md).
+A Lima VM runs k3s, and Flux applies everything in `clusters/zion/` from this repo. Secrets are committed encrypted with SOPS + age and decrypted in the cluster. Plex and Jellyfin run as native macOS apps for hardware transcoding ([ADR 0008](docs/decisions/0008-native-media-servers-on-mini.md)). Their setup is documented in [hosts/macos-mini/](hosts/macos-mini/README.md).
 
 ```mermaid
 flowchart LR
@@ -69,53 +76,50 @@ flowchart LR
   me["My devices<br/>(tailnet)"]
   cf["Cloudflare<br/>kanokgan.com"]
   nas[("Synology DS923+")]
-  nvme[("External NVMe<br/>copy of Immich folder")]
+  nvme[("External NVMe<br/>Immich library")]
 
-  subgraph mini["Mac mini M2 · macOS"]
+  subgraph mini["Mac mini M2 · macOS · host: macos-mini"]
     cfd["cloudflared<br/>tunnel: macos-mini"]
     plex["Plex"]
     jf["Jellyfin"]
     tsapp["Tailscale<br/>k3s API on :6443"]
-    ffs["FreeFileSync<br/>NAS to NVMe, one way"]
-    subgraph vm["Lima VM · k3s (zion)"]
+    bk["nightly backup job<br/>rclone copy 04:00<br/>(planned)"]
+    subgraph vm["Lima VM · k3s (cluster: zion)"]
       flux["Flux"]
-      subgraph immichns["immich: warm standby"]
+      subgraph immichns["immich: serving until the cutover"]
         imsrv["immich-server<br/>+ Tailscale sidecar"]
-        impg[("Postgres<br/>restored from nightly dump")]
-      end
-      subgraph actualns["actual: test, disposable data"]
-        actual["Actual Budget<br/>+ Tailscale sidecar"]
+        impg[("Postgres<br/>restored from a dump")]
       end
     end
   end
 
   gh -->|pull, read-only deploy key| flux
   flux -->|apply + decrypt secrets| imsrv
-  flux -->|apply + decrypt secrets| actual
   internet -->|HTTPS| cf -->|tunnel| cfd
+  cfd --> imsrv
   cfd --> plex
   cfd --> jf
   me -->|tailnet| tsapp
   me -->|tailnet| imsrv
-  me -->|tailnet| actual
   imsrv --> impg
-  nas -.-> ffs -.-> nvme
   nvme -.->|mounted into VM| imsrv
+  nvme -.-> bk
+  bk -.->|SFTP over Tailscale| nas
   nas -.->|media over SMB, path TBD| plex
   nas -.->|media over SMB, path TBD| jf
 ```
 
 ### Where this is heading
 
-Actual Budget and Immich are cut over to `zion` one at a time, and their hostnames are repointed there. Plex and Jellyfin stay native on the Mac mini. Once nothing depends on the Lenovo, it is wiped and rebuilt from this repo as the new `zion`, and the Kubernetes services move onto it through a restore from backup, which also tests that the repo can rebuild the cluster ([ADR 0002](docs/decisions/0002-parallel-cluster-migration.md)). The Mac mini's cluster becomes `zion-standby`, a warm standby that can take over Immich if the Lenovo goes down ([ADR 0004](docs/decisions/0004-mini-as-immich-standby.md)).
+Immich moves to the Lenovo through the cutover runbook, and `immich.kanokgan.com` is repointed to the Lenovo's tunnel. The mini then becomes the warm standby for Immich ([ADR 0004](docs/decisions/0004-mini-as-immich-standby.md)); Plex and Jellyfin stay native on it. The mini's cluster is renamed `mini` in a safe order described in the [tracker](docs/migration/README.md), and monitoring and the web scraper are rebuilt from Git on both machines.
 
 ## Repo map
 
-- `clusters/zion/`: what Flux syncs, including the Flux install itself
+- `clusters/<cluster>/`: what Flux syncs, including the Flux install itself (`extreme`, and `zion` for the mini until it is renamed)
 - `apps/base/<app>/`: cluster-neutral app definitions
-- `apps/zion/<app>/`: per-cluster overlays (volumes, Tailscale, encrypted secrets)
-- `infrastructure/`: cluster-wide components (storage, ingress, monitoring); empty until those ADRs are decided
-- `hosts/<machine>/`: setup for each machine itself, outside Kubernetes. Machines are named `<os>-<nickname>`; today only `hosts/macos-mini/`, outside Kubernetes: the Lima VM definition and the native apps
+- `apps/<cluster>/<app>/`: per-cluster overlays (volumes, Tailscale, encrypted secrets)
+- `infrastructure/`: cluster-wide components; today the GPU device plugin for the Lenovo (`base/` and `extreme/`)
+- `hosts/<machine>/`: setup for each machine itself, outside Kubernetes. Machines are named `<os>-<nickname>`: `hosts/macos-mini/` (the Lima VM, the native apps, the backup job) and `hosts/ubuntu-extreme/` (k3s install, GPU notes, `cloudflared`, the backup job)
 - `docs/decisions/`: architecture decision records
 - `docs/services/`: per-service docs with backup and restore runbooks
 - `docs/migration/`: migration tracker
