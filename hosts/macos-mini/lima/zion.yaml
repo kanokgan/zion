@@ -43,6 +43,14 @@ portForwards:
   - guestPort: 6443
     hostPort: 6443
     hostIP: 127.0.0.1
+  # Public path: the host's cloudflared (tunnel macos-mini) reaches these on localhost.
+  # NodePort Services: apps/zion/immich/nodeport.yaml, apps/zion/actual/nodeport.yaml
+  - guestPort: 30283
+    hostPort: 30283
+    hostIP: 127.0.0.1
+  - guestPort: 30506
+    hostPort: 30506
+    hostIP: 127.0.0.1
 
 provision:
   - mode: system
