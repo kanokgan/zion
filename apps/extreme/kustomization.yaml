@@ -1,0 +1,7 @@
+# apps/extreme/kustomization.yaml
+# Everything Flux applies for this cluster's apps (clusters/extreme/apps.yaml).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - immich
+  - actual

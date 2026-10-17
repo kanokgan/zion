@@ -1,0 +1,117 @@
+# apps/extreme/immich/kustomization.yaml
+# Immich on the Lenovo (cluster `extreme`, ADR 0009): primary, served at https://immich.kanokgan.com (host cloudflared,
+# tunnel ubuntu-extreme -> localhost:30283 -> nodeport.yaml) and at https://immich.dove-komodo.ts.net (Tailscale
+# sidecar in the server pod). Machine learning runs on the GPU (CUDA image, time-sliced, see infrastructure/extreme).
+# The library is the host directory /srv/immich (library.yaml), outside k3s's state.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base/immich
+  - library.yaml
+  - nodeport.yaml
+  - tailscale.yaml
+  - secret.sops.yaml
+  - tailscale-auth.sops.yaml
+# Immich version: the ONE place to edit for an upgrade (runbook: docs/services/immich.md). Server and machine
+# learning must always have the same version, so change both lines together. Pinned to v3.2.4, the version of the
+# dump the cutover restores; upgrade afterwards, not during. The CUDA image is the same version with a -cuda suffix.
+images:
+  - name: ghcr.io/immich-app/immich-server
+    newTag: v3.2.4
+  - name: ghcr.io/immich-app/immich-machine-learning
+    newTag: v3.2.4-cuda
+patches:
+  # Server: asks for a GPU slice (transcoding) and runs with the NVIDIA runtime. Sizes as on the old Lenovo cluster.
+  - target:
+      kind: Deployment
+      name: immich-server
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: immich-server
+      spec:
+        template:
+          spec:
+            runtimeClassName: nvidia
+            containers:
+              - name: immich-server
+                resources:
+                  requests:
+                    cpu: 500m
+                    memory: 4Gi
+                    nvidia.com/gpu: "1"
+                  limits:
+                    cpu: "6"
+                    memory: 24Gi
+                    nvidia.com/gpu: "1"
+  # Machine learning on the GPU. The CUDA image and its models need more memory than the CPU defaults.
+  - target:
+      kind: Deployment
+      name: immich-machine-learning
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: immich-machine-learning
+      spec:
+        template:
+          spec:
+            runtimeClassName: nvidia
+            containers:
+              - name: immich-machine-learning
+                resources:
+                  requests:
+                    cpu: 250m
+                    memory: 1Gi
+                    nvidia.com/gpu: "1"
+                  limits:
+                    cpu: "2"
+                    memory: 6Gi
+                    nvidia.com/gpu: "1"
+  - target:
+      kind: Deployment
+      name: immich-server
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: immich-server
+      spec:
+        template:
+          spec:
+            serviceAccountName: immich-tailscale
+            containers:
+              - name: tailscale
+                # Deliberate exception to "pin image versions": a networking client that stays backward compatible
+                # and should pick up security fixes. Always pulls on start, so this needs Docker Hub reachable.
+                image: tailscale/tailscale:latest
+                imagePullPolicy: Always
+                env:
+                  - name: TS_AUTHKEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: tailscale-auth
+                        key: TS_AUTHKEY
+                  - name: TS_HOSTNAME
+                    value: immich
+                  - name: TS_KUBE_SECRET
+                    value: immich-tailscale-state
+                  - name: TS_USERSPACE
+                    value: "true"
+                  - name: TS_SERVE_CONFIG
+                    value: /config/serve.json
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 500m
+                    memory: 256Mi
+                volumeMounts:
+                  - name: tailscale-config
+                    mountPath: /config
+            volumes:
+              - name: tailscale-config
+                configMap:
+                  name: tailscale-serve-config

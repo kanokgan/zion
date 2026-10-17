@@ -1,0 +1,28 @@
+# clusters/extreme/apps.yaml
+# Applies everything under apps/extreme/ and decrypts *.sops.yaml with the sops-age key (ADR 0007).
+# Waits for `infrastructure` first: the GPU device plugin must be running before pods ask for nvidia.com/gpu.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/name: apps
+    app.kubernetes.io/instance: extreme-apps
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  interval: 10m
+  retryInterval: 2m
+  dependsOn:
+    - name: infrastructure
+  path: ./apps/extreme
+  prune: true
+  wait: true
+  timeout: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age

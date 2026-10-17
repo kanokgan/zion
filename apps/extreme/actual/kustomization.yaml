@@ -1,0 +1,62 @@
+# apps/extreme/actual/kustomization.yaml
+# Actual Budget on the Lenovo (cluster `extreme`, ADR 0009): served at https://actual.kanokgan.com (host cloudflared,
+# tunnel ubuntu-extreme -> localhost:30506 -> nodeport.yaml) and at https://actual.dove-komodo.ts.net (Tailscale sidecar).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base/actual
+  - nodeport.yaml
+  - tailscale.yaml
+  - tailscale-auth.sops.yaml
+# Actual version: the ONE place to edit for an upgrade (runbook: docs/services/actual.md). Same as the mini
+# (26.10.0) until the cutover back to the Lenovo; upgrade only after it.
+images:
+  - name: actualbudget/actual-server
+    newTag: 26.10.0
+patches:
+  - target:
+      kind: Deployment
+      name: actual
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: actual
+      spec:
+        template:
+          spec:
+            serviceAccountName: actual-tailscale
+            containers:
+              - name: tailscale
+                # Deliberate exception to "pin image versions" (same as Immich): a backward-compatible
+                # networking client that should pick up security fixes. Needs Docker Hub reachable on start.
+                image: tailscale/tailscale:latest
+                imagePullPolicy: Always
+                env:
+                  - name: TS_AUTHKEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: tailscale-auth
+                        key: TS_AUTHKEY
+                  - name: TS_HOSTNAME
+                    value: actual
+                  - name: TS_KUBE_SECRET
+                    value: actual-tailscale-state
+                  - name: TS_USERSPACE
+                    value: "true"
+                  - name: TS_SERVE_CONFIG
+                    value: /config/serve.json
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 500m
+                    memory: 256Mi
+                volumeMounts:
+                  - name: tailscale-config
+                    mountPath: /config
+            volumes:
+              - name: tailscale-config
+                configMap:
+                  name: tailscale-config

@@ -1,0 +1,14 @@
+# hosts/ubuntu-extreme/fstab.example
+# Pattern of the NAS mounts in /etc/fstab on the Lenovo. The real file stays on the host (the OS is kept, ADR 0009)
+# and has about 15 such lines. Real share names and the NAS address are not in this public repo: replace the
+# placeholders. Credentials are in root-only files outside Git (mode 0600), never inline.
+#
+# Change from the old file: add `nofail` and `x-systemd.mount-timeout=30` to every line. `_netdev` already keeps
+# these out of local-fs.target; `nofail` stops a missing NAS from being reported as a failed boot, and the timeout
+# shortens the wait when it is unreachable (15 mounts at the default 90 s made boots slow).
+#
+# <share>                        <mount point>          <type> <options>
+//<NAS_ADDRESS>/Member1Drive     /mnt/Member1Drive      cifs   credentials=/root/.smbcredentials,uid=999,gid=999,_netdev,nofail,x-systemd.mount-timeout=30,cache=loose,actimeo=30,rsize=130048,wsize=130048,vers=3.1.1 0 0
+//<NAS_ADDRESS>/temp             /mnt/temp              cifs   credentials=/root/.smbcredentials,uid=999,gid=999,_netdev,nofail,x-systemd.mount-timeout=30,cache=loose,actimeo=30,rsize=130048,wsize=130048,vers=3.1.1 0 0
+# ZionLabs is reached over the tailnet with its own credentials file:
+//<NAS_TAILSCALE_NAME>/ZionLabs  /mnt/ZionLabs          cifs   credentials=/root/.smbcredentials-tnbk,uid=1000,gid=1000,_netdev,nofail,x-systemd.mount-timeout=30,cache=loose,actimeo=30,rsize=130048,wsize=130048,vers=3.1.1 0 0

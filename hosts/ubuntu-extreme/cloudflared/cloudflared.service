@@ -1,0 +1,24 @@
+# hosts/ubuntu-extreme/cloudflared/cloudflared.service
+# Install as /etc/systemd/system/cloudflared.service. Connector for the Cloudflare tunnel `ubuntu-extreme`
+# (ADR 0009). The public hostnames and their routes (immich.kanokgan.com -> http://localhost:30283,
+# actual.kanokgan.com -> http://localhost:30506) are configured in the Cloudflare dashboard, not here.
+# The token is in /etc/cloudflared/ubuntu-extreme.token (root:cloudflared, mode 0640), never in Git.
+[Unit]
+Description=cloudflared tunnel ubuntu-extreme
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cloudflared
+Group=cloudflared
+ExecStart=/usr/bin/cloudflared --no-autoupdate tunnel run --token-file /etc/cloudflared/ubuntu-extreme.token
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

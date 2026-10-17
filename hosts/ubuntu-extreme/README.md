@@ -18,7 +18,7 @@ This file records what exists on 2026-10-17, so the rebuild does not depend on m
 | k3s | Started with `server --write-kubeconfig-mode 644` only, no config file: Traefik and ServiceLB on (default), node `k3s-master`, kubeconfig readable by every user | Pinned `v1.33.6+k3s1` (same as the mini), `--disable traefik --disable servicelb --node-name extreme`, kubeconfig stays root-only (`hosts/ubuntu-extreme/k3s-install.sh`) |
 | containerd | Custom `config.toml.tmpl` that makes `nvidia` the default runtime for every pod (`default_runtime_name = "nvidia"`) | Not needed: pods ask for `runtimeClassName: nvidia`, including the device plugin (`infrastructure/base/nvidia-device-plugin`). Fallback if that fails on the first boot: the template is `{{ template "base" . }}` plus the `default_runtime_name = "nvidia"` setting under `[plugins.'io.containerd.cri.v1.runtime'.containerd]` |
 | GPU device plugin | `nvidia-device-plugin-daemonset`, image v0.14.5, privileged, `FAIL_ON_INIT_ERROR=false`, config `nvidia-device-plugin-config`: time-slicing, `nvidia.com/gpu` replicas 4, `migStrategy: none` | In the repo, same version and config, but `FAIL_ON_INIT_ERROR=true` so a broken driver crashes the pod instead of hiding |
-| Firewall (ufw) | Active: 22/tcp from anywhere, tailscale0 all, 80 and 443 from the LAN, 10250/tcp (kubelet) from anywhere | Review: 80/443 only matter if something listens on them (Traefik is off), 10250 is not needed on a single node. Decide before the wipe |
+| Firewall (ufw) | Active: 22/tcp from anywhere, tailscale0 all, 80 and 443 from the LAN, 10250/tcp (kubelet) from anywhere | Unchanged by the wipe (the OS stays). After the cluster is up: replace "10250 from anywhere" with allows from the k3s pod and service ranges (`10.42.0.0/16`, `10.43.0.0/16`), drop 80/443, then check node metrics and pod logs still work. Leave SSH alone while there is no physical access |
 | Cron | Root crontab: `0 3 * * *  /root/scripts/k3s-disaster-backup.sh` (log `/var/log/k3s-disaster-backup.log`). **Contents not recorded yet** | Read it before the wipe: what it backs up and where. Remove the entry after the wipe |
 | Mounts | `/etc/fstab`: 15 writable CIFS mounts of NAS shares under `/mnt` (personal drives, camera folders, `temp`, `HomeBrain`, `ZionLabs` over the tailnet), credentials in root-only files outside Git, all `_netdev`, none `nofail` | Stay as they are (the OS is kept). Add `nofail,x-systemd.mount-timeout=30`. No LAN addresses or real names in Git |
 | Tailscale devices | Old sidecars from the cluster are still registered (`actual`, `immich`, `monitoring`, `humulos-scrape`, `filebrowser`, plus the mini's `*-standby`) | Delete the stale ones in the admin console before the rebuild, or the new sidecars get `-1` names |
@@ -47,22 +47,23 @@ Fix (done 2026-10-17): reboot so the new module loads (kernel 6.8.0-147, driver 
 
 ## Rebuild runbook (draft, in order; each step is run by the owner)
 
-Gates first: NAS snapshots on `ZionLabs` (done), the mini to NAS sync run once with a clean `rclone check` (`hosts/macos-mini/backup/`), `k3s-disaster-backup.sh` read, Plex confirmed not needed (it stays on the mini).
+Gates (checked 2026-10-17): NAS snapshots on `ZionLabs` (hourly, done); the NAS holds the library as of the first cutover and the mini's NVMe holds everything newer; the old library, databases, `monitoring` and `web-scraper` data are accepted as lost; `k3s-disaster-backup.sh` was half-written and does nothing, so it is dropped; Plex and Jellyfin stay on the mini. The mini to NAS sync is not a gate for the wipe but must exist before the Immich cutover.
 
-1. Rename the host before installing k3s: `hostnamectl set-hostname ubuntu-extreme`, fix the `127.0.1.1` line in `/etc/hosts`, `tailscale set --hostname=ubuntu-extreme`. `ssh k3s-master` becomes `ssh ubuntu-extreme`.
-2. Delete the stale Tailscale devices in the admin console.
-3. Suspend the Lenovo's `immich-library-sync` CronJob (nothing may write to `/ZionLabs/Immich/Backup` but the mini).
-4. Unmount the writable CIFS mounts before removing k3s (`k3s-killall.sh`, `umount -a -t cifs`, `mount | grep -E "kubelet|k3s|cifs"` is empty), then run `k3s-uninstall.sh`, then remove the `k3s-disaster-backup.sh` cron entry. A directory removal through a live mount would delete NAS files.
-5. `mkdir /srv/immich` for the library (outside k3s's state, so a k3s reinstall never touches it). Copy the library from the NAS into it while the mini keeps serving.
-6. Install the NVIDIA exclusion file and k3s with `k3s-install.sh`; copy the kubeconfig to `~/.kube/config` (mode 600) and name the context `extreme`.
+1. Push this repo's pending commits, then clone it on the Lenovo (it is public, read-only use) for the scripts below.
+2. Stop k3s and unmount the writable CIFS mounts (`k3s-killall.sh`, `umount -a -t cifs`; `mount | grep -E "kubelet|k3s|cifs"` must be empty), then `k3s-uninstall.sh`, then remove the `k3s-disaster-backup.sh` cron entry. A directory removal through a live mount would delete NAS files. This is the point of no return for the old cluster's data.
+3. Rename the host (after k3s is gone): `hostnamectl set-hostname ubuntu-extreme`, fix the `127.0.1.1` line in `/etc/hosts`, `tailscale set --hostname=ubuntu-extreme`. `ssh k3s-master` becomes `ssh ubuntu-extreme`. Remount with `mount -a`.
+4. `mkdir /srv/immich` for the library (outside k3s's state, so a k3s reinstall never touches it).
+5. Install the NVIDIA exclusion file and k3s with `k3s-install.sh`; copy the kubeconfig to `~/.kube/config` (mode 600) and name the context `extreme`.
+6. Copy the library from the NAS into `/srv/immich` while the mini keeps serving (hours; the delta is copied again at the cutover).
 7. Create the `sops-age` secret and bootstrap Flux on `clusters/extreme`.
-8. Install `cloudflared` on the host with a new tunnel named `ubuntu-extreme` (token file outside Git), routes `http://localhost:30283` (Immich) and `http://localhost:30506` (Actual).
+8. Install `cloudflared` on the host (`cloudflared/README.md`) with a new tunnel named `ubuntu-extreme` (token file outside Git); the routes `http://localhost:30283` (Immich) and `http://localhost:30506` (Actual) are added at the cutover.
 9. Cutover: the mini in maintenance mode, dump, sync mini to NAS, copy the delta NAS to Lenovo, restore on the Lenovo, move both hostnames to the new tunnel, then repeat for Actual (export and import).
 10. Delete the `home-brain` tunnel and its leftover DNS records, and the stale Tailscale devices.
 
 ## Open items
 
 - Contents of `/root/scripts/k3s-disaster-backup.sh` and where its output goes.
-- ufw: which rules stay (80/443 from the LAN, 10250).
-- `hosts/ubuntu-extreme/k3s-install.sh` (written, untested), the apt exclusion file, the `cloudflared` systemd unit, and the `/etc/fstab` template with placeholders.
-- `clusters/extreme/` bootstrap and `apps/extreme/` (Immich with the CUDA ML image at an exact version, Actual).
+- ufw: tighten after the rebuild (see the table).
+- Untested: `k3s-install.sh`, the apt exclusion file, `cloudflared/` (unit and README), `fstab.example`. All written, none run yet.
+- `flux bootstrap` for `clusters/extreme/` (adds `flux-system/` beside the two Kustomizations already there).
+- External libraries (the personal drives, `/V11Pro`, `/70Mai`) are not mounted in `apps/extreme/immich`: their paths contain real names, so they need Flux `postBuild.substituteFrom` from a SOPS secret, or they stay unavailable.

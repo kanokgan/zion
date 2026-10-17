@@ -1,0 +1,69 @@
+# apps/extreme/actual/tailscale.yaml
+# Tailscale sidecar support for Actual on the Lenovo: serve config (HTTPS on the tailnet name, proxied to Actual
+# on 127.0.0.1:5006) and a ServiceAccount that lets the sidecar keep its node identity in the Secret
+# actual-tailscale-state. The auth key is in tailscale-auth.sops.yaml.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tailscale-config
+  namespace: actual
+  labels:
+    app.kubernetes.io/name: actual-tailscale
+    app.kubernetes.io/instance: tailscale-config
+    app.kubernetes.io/part-of: zion-lab
+data:
+  serve.json: |
+    {
+      "TCP": { "443": { "HTTPS": true } },
+      "Web": {
+        "${TS_CERT_DOMAIN}:443": {
+          "Handlers": { "/": { "Proxy": "http://127.0.0.1:5006" } }
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: actual-tailscale
+  namespace: actual
+  labels:
+    app.kubernetes.io/name: actual-tailscale
+    app.kubernetes.io/instance: actual-tailscale
+    app.kubernetes.io/part-of: zion-lab
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: actual-tailscale
+  namespace: actual
+  labels:
+    app.kubernetes.io/name: actual-tailscale
+    app.kubernetes.io/instance: actual-tailscale
+    app.kubernetes.io/part-of: zion-lab
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["actual-tailscale-state"]
+    verbs: ["get", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: actual-tailscale
+  namespace: actual
+  labels:
+    app.kubernetes.io/name: actual-tailscale
+    app.kubernetes.io/instance: actual-tailscale
+    app.kubernetes.io/part-of: zion-lab
+subjects:
+  - kind: ServiceAccount
+    name: actual-tailscale
+    namespace: actual
+roleRef:
+  kind: Role
+  name: actual-tailscale
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,41 @@
+# apps/extreme/immich/library.yaml
+# The library: the host directory /srv/immich on the Lenovo's NVMe, deliberately outside /var/lib/rancher so that
+# removing or reinstalling k3s never touches it. Bound statically to immich-library-pvc; Retain so deleting the claim
+# never touches the files. Create the directory before the first sync (hosts/ubuntu-extreme/README.md).
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: immich-library-pv
+  labels:
+    app.kubernetes.io/name: immich-library
+    app.kubernetes.io/instance: immich-library-pv
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: immich
+    name: immich-library-pvc
+  hostPath:
+    path: /srv/immich
+    type: Directory
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-library-pvc
+  namespace: immich
+  labels:
+    app.kubernetes.io/name: immich-library
+    app.kubernetes.io/instance: immich-library-pvc
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: immich-library-pv
+  resources:
+    requests:
+      storage: 1Ti
