@@ -10,7 +10,9 @@
       "Bash(kustomize build:*)", "Bash(kubeconform:*)", "Bash(yamllint:*)"
     ],
     "deny": [
-      "Bash(git push:*)", "Bash(sudo:*)", "Bash(ssh:*)", "Bash(scp:*)", "Bash(rsync:*)",
+      "Bash(sudo:*)", "Bash(ssh:*)", "Bash(scp:*)", "Bash(rsync:*)",
+      "Bash(git push:*)", "Bash(git commit:*)", "Bash(git merge:*)", "Bash(git rebase:*)",
+      "Bash(git reset:*)", "Bash(git tag:*)", "Bash(git stash:*)", "Bash(git pull:*)",
       "Read(./**/*.agekey)", "Read(./**/*.dec.yaml)", "Read(./**/.env)", "Read(./.denylist)","Read(./**/.env.*)",
       "Read(~/.config/sops/**)", "Read(~/.kube/**)"
     ]
