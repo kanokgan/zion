@@ -1,0 +1,8 @@
+# infrastructure/base/monitoring/kustomization.yaml
+# Cluster-neutral part of monitoring (ADR 0010): the namespace and the chart repository.
+# Each cluster adds its own HelmRelease with its values.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - helmrepository.yaml

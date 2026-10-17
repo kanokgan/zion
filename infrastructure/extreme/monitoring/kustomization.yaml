@@ -1,0 +1,8 @@
+# infrastructure/extreme/monitoring/kustomization.yaml
+# Monitoring on the Lenovo (ADR 0010), applied by its own Flux Kustomization (clusters/extreme/monitoring.yaml)
+# so a failing monitoring release cannot block the apps. This folder is not part of ../kustomization.yaml.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base/monitoring
+  - helmrelease.yaml

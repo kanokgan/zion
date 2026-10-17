@@ -85,6 +85,16 @@ Done after the cutover, with the mini idle, because the cutover edits `apps/zion
 
 Do not rename the Lima VM or the k3s node (both are called `zion`): local-path volumes are tied to the node name. Leave them and note it in `hosts/macos-mini/`.
 
+## Monitoring ([ADR 0010](../decisions/0010-monitoring.md), [service doc](../services/monitoring.md))
+
+One Prometheus per cluster, one Grafana on the Lenovo with a data source for each; alerts to Telegram.
+
+- [ ] Stage 1: stack on the Lenovo (written, not yet applied or checked)
+- [ ] Stage 2: SOPS secrets (Grafana admin, Telegram), tailnet access, alert rules (disk, link speed, GPU plugin, Flux, crash loops)
+- [ ] Stage 3: Immich and backup-job metrics, dashboards in Git
+- [ ] Stage 4: the mini (after the Immich cutover), overview dashboard, dead-man's switch
+- [ ] Later: read-only Telegram bot, logs (Loki), file browsing
+
 ## Next steps
 1. Immich: finish the library copy to the Lenovo (tmux session `copy`, about 36 hours because the Lenovo's wired link negotiates 100 Mb/s), then the cutover runbook.
 2. Before that cutover: the mini's own nightly NAS backup job, the Lenovo's backup job dry run, and the fresh Actual export are the open prerequisites.

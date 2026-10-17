@@ -1,0 +1,24 @@
+# clusters/extreme/monitoring.yaml
+# Applies monitoring (ADR 0010) separately from `infrastructure` and `apps`: a failing monitoring release must not
+# block the GPU plugin or the services. It waits for `infrastructure` only because that creates the cluster's base.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: monitoring
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/name: monitoring
+    app.kubernetes.io/instance: extreme-monitoring
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  interval: 10m
+  retryInterval: 2m
+  dependsOn:
+    - name: infrastructure
+  path: ./infrastructure/extreme/monitoring
+  prune: true
+  wait: true
+  timeout: 20m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system

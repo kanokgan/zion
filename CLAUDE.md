@@ -47,7 +47,7 @@ I'm a software engineer, so skip basic programming explanations. Do teach infra,
 - Ingress/DNS/TLS: the pattern above works today; the ADR that formalises it is still pending
 - Record significant decisions as short ADRs (`docs/decisions/NNNN-title.md`): context, decision, alternatives, consequences
 - Commit messages: `<scope>: <summary>`, one logical change per commit
-- Pending ADRs: ingress/DNS/TLS, NAS storage pattern, backups, FileVault on the mini (unattended boot vs disk encryption), monitoring, read-only access for Lens and Claude
+- Pending ADRs: ingress/DNS/TLS, NAS storage pattern, backups, FileVault on the mini (unattended boot vs disk encryption), read-only access for Lens and Claude. Monitoring is decided: [ADR 0010](docs/decisions/0010-monitoring.md)
 
 ## How to work with me
 - **Ask what mode I'm in if it's unclear:**
@@ -112,7 +112,7 @@ This repo is public on GitHub (since 2026-10-12) as a portfolio. Every file and 
 
 - `clusters/extreme/` (the Lenovo) and `clusters/zion/` (the mini, to be renamed `mini`): Flux bootstrap files (`flux-system/`, generated, do not edit) and the Kustomizations (`apps.yaml`, plus `infrastructure.yaml` on `extreme`), which apply the folders below with SOPS decryption.
 - `apps/base/`: Immich and Actual Budget. `apps/extreme/` and `apps/zion/`: their per-cluster overlays (library volume, GPU or CPU image, Tailscale sidecars, NodePorts, encrypted secrets).
-- `infrastructure/`: cluster-wide components. Today only the NVIDIA device plugin for the Lenovo (`base/`, `extreme/`); the ingress, storage and backup ADRs are still pending.
+- `infrastructure/`: cluster-wide components. Today the NVIDIA device plugin and monitoring (ADR 0010) for the Lenovo (`base/`, `extreme/`, `extreme/monitoring/`); the ingress, storage and backup ADRs are still pending.
 - `hosts/macos-mini/` and `hosts/ubuntu-extreme/`: the host-level setup outside Flux (Lima VM, native apps, k3s install, GPU notes, `cloudflared`, the nightly NAS backup job).
 - `docs/decisions/`: ADRs. `docs/services/`: per-service docs with backup and restore. `docs/migration/`: migration tracker. `.claude/`: Claude Code settings, the Bash guard hook (needs `jq`) and its test, `hooks/test-guard.sh`.
 - [script/auto-mount.sh](script/auto-mount.sh): macOS helper that mounts the NAS SMB shares over Tailscale; not part of the cluster.

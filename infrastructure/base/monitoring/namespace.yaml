@@ -1,0 +1,11 @@
+# infrastructure/base/monitoring/namespace.yaml
+# node-exporter needs the host's network, PID namespace and filesystems, so the namespace allows privileged pods.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/name: monitoring
+    app.kubernetes.io/instance: monitoring
+    app.kubernetes.io/part-of: zion-lab
+    pod-security.kubernetes.io/enforce: privileged
