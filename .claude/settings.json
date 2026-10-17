@@ -4,17 +4,20 @@
     "allow": [
       "Bash(kubectl get:*)", "Bash(kubectl describe:*)", "Bash(kubectl logs:*)", "Bash(kubectl top:*)",
       "Bash(kubectl explain:*)", "Bash(kubectl api-resources:*)", "Bash(kubectl version:*)",
-      "Bash(kubectl auth can-i:*)", "Bash(kubectl config get-contexts:*)",
+      "Bash(kubectl auth can-i:*)", "Bash(kubectl config get-contexts:*)", "Bash(kubectl kustomize:*)",
       "Bash(helm list:*)", "Bash(helm status:*)", "Bash(flux get:*)",
       "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)",
       "Bash(kustomize build:*)", "Bash(kubeconform:*)", "Bash(yamllint:*)"
     ],
     "deny": [
       "Bash(sudo:*)", "Bash(ssh:*)", "Bash(scp:*)", "Bash(rsync:*)",
+      "Bash(limactl:*)", "Bash(launchctl:*)", "Bash(tailscale:*)", "Bash(cloudflared:*)",
+      "Bash(ufw:*)", "Bash(umount:*)", "Bash(crontab:*)",
       "Bash(git push:*)", "Bash(git commit:*)", "Bash(git merge:*)", "Bash(git rebase:*)",
       "Bash(git reset:*)", "Bash(git tag:*)", "Bash(git stash:*)", "Bash(git pull:*)",
-      "Read(./**/*.agekey)", "Read(./**/*.dec.yaml)", "Read(./**/.env)", "Read(./.denylist)","Read(./**/.env.*)",
-      "Read(~/.config/sops/**)", "Read(~/.kube/**)"
+      "Bash(sops decrypt:*)", "Bash(sops edit:*)", "Bash(kubectl config view:*)",
+      "Read(./**/*.agekey)", "Read(~/**/*.agekey)", "Read(./**/*.dec.yaml)", "Read(./**/.env)", "Read(./.denylist)","Read(./**/.env.*)",
+      "Read(~/.config/sops/**)", "Read(~/Library/Application Support/sops/**)", "Read(~/.kube/**)"
     ]
   },
   "hooks": {

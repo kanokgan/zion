@@ -19,7 +19,7 @@ Rules:
 - One namespace per app, named after the app.
 - An application is defined once in `apps/base/`; clusters differ only through overlays.
 - Cluster-specific values live in the overlay, never in `base/`.
-- Machines are named `<os>-<nickname>`, lowercase (`macos-mini`, `windows-extreme`). The `hosts/` folder, the Tailscale device and the Cloudflare tunnel use the same name.
+- Machines are named `<os>-<nickname>`, lowercase (`macos-mini`, `ubuntu-extreme`). The `hosts/` folder, the Tailscale device and the Cloudflare tunnel use the same name.
 
 ## Alternatives considered
 - One directory per cluster with full copies of manifests: simple but the copies drift, which defeats a standby.

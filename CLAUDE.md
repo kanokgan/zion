@@ -1,8 +1,6 @@
-# CLAUDE.md
+# CLAUDE.md: Zion Lab project instructions
 
 This file provides guidance to Claude (Claude Code and claude.ai) when working with this repository and the Zion Lab project.
-
-# Zion Lab — Project Instructions
 
 ## Purpose
 Zion Lab is my homelab. It has two equal goals:
@@ -37,15 +35,19 @@ I'm a software engineer, so skip basic programming explanations. Do teach infra,
 
 ## Conventions (refine these as we decide)
 - Repo layout: `clusters/<cluster>/` (what Flux syncs), `apps/base/<app>/` (one definition per app), `apps/<cluster>/<app>/` (per-cluster overlays), `infrastructure/` (cluster-wide components), `hosts/<machine>/` (per-machine setup, outside Flux). See [ADR 0006](docs/decisions/0006-repo-layout.md).
-- Machine names: `<os>-<nickname>`, lowercase, e.g. `macos-mini`, `macos-m5`, `windows-extreme`. The same name is used for the `hosts/` folder, the Tailscale device, and the Cloudflare tunnel.
+- Machine names: `<os>-<nickname>`, lowercase, e.g. `macos-mini`, `macos-m5`, `ubuntu-extreme`. The same name is used for the `hosts/` folder, the Tailscale device, and the Cloudflare tunnel.
+- Cluster names: the machine's nickname, not its role (`extreme`, `mini`), because roles swap ([ADR 0009](docs/decisions/0009-rebuild-lenovo-in-place.md)). The mini's cluster is still called `zion` until it is renamed.
+- Tailscale names of pods (sidecars, tailnet-only, for debugging one specific instance): `<app>-<machine>`, e.g. `immich-ubuntu-extreme`. The production name of a service is its `kanokgan.com` hostname, served by whichever machine is primary.
+- Public access: `cloudflared` runs on the host of each machine, in a tunnel named after the machine, and reaches apps on NodePorts on localhost (Immich 30283, Actual 30506). Hostnames are moved between tunnels in the Cloudflare dashboard at a cutover; one hostname belongs to one tunnel.
+- One writer per data path: a NAS folder is written by one machine at a time, and a service's old instance is scaled to 0 before the new one starts.
 - One namespace per app (or per logical group); consistent labels and naming
 - Labels on every resource: `app.kubernetes.io/name`, `app.kubernetes.io/instance`, and `app.kubernetes.io/part-of: zion-lab`
-- Pin image versions; no `latest`. Images must also be multi-arch (arm64 + amd64). One deliberate exception: the Tailscale sidecar (`tailscale/tailscale:latest`), see [docs/services/immich.md](docs/services/immich.md).
+- Pin image versions; no `latest`, and no floating tags like `v3` (a restart can pull a newer release). Images in `apps/base/` must be multi-arch (arm64 + amd64). An image used only in one cluster's overlay needs only that architecture, for example the CUDA machine-learning image and the NVIDIA device plugin on the Lenovo (amd64). One deliberate exception to "no `latest`": the Tailscale sidecar (`tailscale/tailscale:latest`) in Immich and Actual, see [docs/services/immich.md](docs/services/immich.md).
 - Set resource requests/limits for every workload
-- Ingress/DNS pattern for kanokgan.com and Tailscale access: [to be decided]
+- Ingress/DNS/TLS: the pattern above works today; the ADR that formalises it is still pending
 - Record significant decisions as short ADRs (`docs/decisions/NNNN-title.md`): context, decision, alternatives, consequences
 - Commit messages: `<scope>: <summary>`, one logical change per commit
-- Pending ADRs: ingress/DNS/TLS, NAS storage pattern, backups, FileVault on the mini (unattended boot vs disk encryption)
+- Pending ADRs: ingress/DNS/TLS, NAS storage pattern, backups, FileVault on the mini (unattended boot vs disk encryption), monitoring, read-only access for Lens and Claude
 
 ## How to work with me
 - **Ask what mode I'm in if it's unclear:**
@@ -61,12 +63,14 @@ I'm a software engineer, so skip basic programming explanations. Do teach infra,
 
 ## Hard rules for Claude
 - Never mutate a cluster. Only read-only commands (`get`, `describe`, `logs`, `top`, `auth can-i`). Changes happen via commits + GitOps.
-- Always pass `--context` explicitly (`extreme`, or `zion` for the mini's cluster until it is renamed `mini`); never rely on the current context.
-- Never push. I review and push.
-- Never read, print, or decrypt secrets or keys. Refer to secrets by name only and use placeholders.
+- Always pass `--context` explicitly (`extreme`, or `zion` for the mini's cluster until it is renamed `mini`); never rely on the current context. If a context is not in the kubeconfig of the machine I run on (the Lenovo's kubeconfig is a separate file I cannot read), don't query it: ask me for pasted output.
+- Never push and never commit. I review, commit and push; you suggest commit messages.
+- Never read, print, or decrypt secrets or keys. Refer to secrets by name only and use placeholders. Reading or copying the ciphertext in `*.sops.yaml` files is fine; plaintext never is.
+- If a paste or a log contains a live token or key (Immich prints maintenance login tokens, Tailscale and Cloudflare tokens), say so, don't repeat it, and recommend rotating it.
 - Never commit plaintext secrets.
-- `ssh`, `sudo`, `rsync`, `k3s`, and `systemctl` are mine to run. Give me the command.
-- If `.claude/hooks/guard-bash.sh` blocks something, explain what you wanted and why; don't rephrase to bypass it.
+- `ssh`, `scp`, `sudo`, `rsync`, `k3s`, `systemctl`, `limactl`, `launchctl`, `tailscale`, `cloudflared`, `ufw`, `umount` and `crontab` are mine to run. Give me the command.
+- Edit files with the Edit and Write tools, not with shell heredocs or scripts: the Bash guard scans the whole command text and blocks prose that contains a blocked word.
+- If `.claude/hooks/guard-bash.sh` blocks something, explain what you wanted and why; don't rephrase to bypass it. After changing the hook, run `.claude/hooks/test-guard.sh`.
 
 ## Per-service migration workflow
 1. **Inventory** the service on the source cluster (read-only): workloads, PVCs, config, ingress, secrets by name.
@@ -104,13 +108,13 @@ This repo is public on GitHub (since 2026-10-12) as a portfolio. Every file and 
 - Use code blocks with the file path as the first comment.
 - End multi-step work with a short "verify" step (commands that show it worked).
 
-# Repository contents (current)
+## Repository contents (current)
 
 - `clusters/extreme/` (the Lenovo) and `clusters/zion/` (the mini, to be renamed `mini`): Flux bootstrap files (`flux-system/`, generated, do not edit) and the Kustomizations (`apps.yaml`, plus `infrastructure.yaml` on `extreme`), which apply the folders below with SOPS decryption.
 - `apps/base/`: Immich and Actual Budget. `apps/extreme/` and `apps/zion/`: their per-cluster overlays (library volume, GPU or CPU image, Tailscale sidecars, NodePorts, encrypted secrets).
 - `infrastructure/`: cluster-wide components. Today only the NVIDIA device plugin for the Lenovo (`base/`, `extreme/`); the ingress, storage and backup ADRs are still pending.
 - `hosts/macos-mini/` and `hosts/ubuntu-extreme/`: the host-level setup outside Flux (Lima VM, native apps, k3s install, GPU notes, `cloudflared`, the nightly NAS backup job).
-- `docs/decisions/`: ADRs. `docs/services/`: per-service docs with backup and restore. `docs/migration/`: migration tracker. `.claude/`: Claude Code settings and the Bash guard hook (needs `jq`).
+- `docs/decisions/`: ADRs. `docs/services/`: per-service docs with backup and restore. `docs/migration/`: migration tracker. `.claude/`: Claude Code settings, the Bash guard hook (needs `jq`) and its test, `hooks/test-guard.sh`.
 - [script/auto-mount.sh](script/auto-mount.sh): macOS helper that mounts the NAS SMB shares over Tailscale; not part of the cluster.
 - `.pre-commit-config.yaml`, [script/check-denylist.sh](script/check-denylist.sh), `.github/workflows/secret-scan.yaml`: public-repo guardrails (see "Public repository").
 
