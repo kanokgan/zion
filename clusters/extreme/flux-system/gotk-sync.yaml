@@ -1,0 +1,28 @@
+# clusters/extreme/flux-system/gotk-sync.yaml
+# Same shape as the mini's (clusters/zion/flux-system/gotk-sync.yaml), with two differences: the path is this
+# cluster's, and the repository is read over HTTPS without a deploy key, because the repo is public (ADR 0009).
+# If the repo ever becomes private again, switch to an ssh:// url plus a secretRef like the mini's.
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  ref:
+    branch: main
+  url: https://github.com/kanokgan/zion.git
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./clusters/extreme
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system

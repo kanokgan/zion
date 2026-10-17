@@ -21,6 +21,15 @@ images:
   - name: ghcr.io/immich-app/immich-machine-learning
     newTag: v3.2.4-cuda
 patches:
+  # The server stays at 0 until the library is copied and the database restored (cutover, ADR 0009): an empty Immich
+  # reachable on the tailnet would offer first-run admin signup to anyone there. Set to 1 in the cutover commit.
+  - target:
+      kind: Deployment
+      name: immich-server
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
   # Server: asks for a GPU slice (transcoding) and runs with the NVIDIA runtime. Sizes as on the old Lenovo cluster.
   - target:
       kind: Deployment

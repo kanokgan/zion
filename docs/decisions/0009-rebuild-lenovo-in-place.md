@@ -16,6 +16,7 @@ Found while preparing (details in `hosts/ubuntu-extreme/README.md`): k3s started
 - **Public access: `cloudflared` on the host**, as on the mini, in a new tunnel named after the machine (`ubuntu-extreme`), pointing at NodePorts on localhost (30283 Immich, 30506 Actual). Running it in the cluster was a mistake. The `home-brain` tunnel and its DNS records are removed.
 - **GPU**: device plugin and time-slicing in `infrastructure/`; pods and the plugin ask for `runtimeClassName: nvidia` instead of making it the default runtime; the plugin fails loudly (`FAIL_ON_INIT_ERROR=true`); NVIDIA packages are excluded from unattended upgrades.
 - **k3s**: `v1.33.6+k3s1`, Traefik and ServiceLB disabled, root-only kubeconfig, same as the mini apart from that.
+- **Flux** (same v2.9.6 components as the mini) reads the public repo over HTTPS with no deploy key; this differs from ADR 0005's SSH deploy key and needs no secret. The one manual secret is `sops-age` (ADR 0007). Immich's server and Actual stay at 0 replicas until their data is restored, so no empty instance offers first-run signup on the tailnet.
 - **Dropped, data discarded:** `monitoring` and `web-scraper` on the old cluster (to be rebuilt from Git, mirrored on the mini), the old Postgres and Redis volumes, `home-brain`.
 
 ## Alternatives considered

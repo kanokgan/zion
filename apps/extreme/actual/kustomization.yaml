@@ -14,6 +14,15 @@ images:
   - name: actualbudget/actual-server
     newTag: 26.10.0
 patches:
+  # Actual stays at 0 until its data is imported (cutover, ADR 0009): an empty server offers first-run password
+  # setup to anyone on the tailnet. Set to 1 in the cutover commit.
+  - target:
+      kind: Deployment
+      name: actual
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
   - target:
       kind: Deployment
       name: actual
