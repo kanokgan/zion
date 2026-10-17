@@ -1,8 +1,7 @@
 # apps/zion/immich/kustomization.yaml
-# Standby overlay (ADR 0004): the server runs at 1 replica as a read-mostly copy reachable at
-# https://immich-standby.dove-komodo.ts.net (the Tailscale sidecar lives in the server pod); ML stays at 0.
-# Uploads made here are lost when the NVMe copy is refreshed from the NAS. Set the server replicas to 0 to
-# take the standby offline.
+# Mini overlay (ADR 0004): production since 2026-10-17, served at https://immich.kanokgan.com (tunnel macos-mini ->
+# localhost:30283 -> nodeport.yaml) and at https://immich-standby.dove-komodo.ts.net (Tailscale sidecar in the
+# server pod). ML stays at 0. Uploads live on the NVMe: never refresh it from the NAS (the sync goes mini -> NAS only).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

@@ -20,6 +20,9 @@ Current data path on the Lenovo, verified 2026-10-11:
 - Standby data is the nightly offsite copy: photos from the external drive (shared into the VM), Postgres restored from the latest Immich dump onto the VM's own disk, not onto the shared mount.
 - Only one cluster runs Immich writable at a time. Failover is manual and ordered: stop Immich on the Lenovo (if reachable), restore on the mini, verify, then switch traffic.
 
+## Update 2026-10-17
+The mini took over production early: the Lenovo is being wiped and rebuilt from this repo, which takes more than a day, so `immich.kanokgan.com` moved to the mini's `macos-mini` tunnel (host `cloudflared`, NodePort `30283` forwarded by Lima). The Lenovo's Immich is scaled to 0 and the sync direction is mini to NAS. After the rebuild the roles revert as described here (the Lenovo restores from the NAS and the mini returns to standby). The "public traffic is not wired" line above describes the original design, not the current state.
+
 ## Failover and failback (outline, to be tested before it is relied on)
 1. Stop Immich on the Lenovo if it is up.
 2. Start Immich on the mini; restore the latest dump through Immich's restore flow.

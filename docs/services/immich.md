@@ -1,26 +1,30 @@
 # Immich
 
-Photo library used daily by family. The main instance runs on the Lenovo (`zion-old`, node `k3s-master`). A warm standby runs on the Mac mini (`zion`, ADR 0004). Immich is the one service that must not go down.
+Photo library used daily by family. Since 2026-10-17 the Mac mini (`zion`) serves `immich.kanokgan.com`; the Lenovo (`zion-old`, node `k3s-master`) is scaled to 0 and kept as a rollback until it is wiped and rebuilt (ADR 0004). Immich is the one service that must not go down.
 
 ## What runs where
 
-| | Lenovo (`zion-old`) | Mac mini (`zion`, standby) |
+| | Lenovo (`zion-old`, scaled to 0 since 2026-10-17) | Mac mini (`zion`, production since 2026-10-17) |
 |---|---|---|
-| Server | `immich-server:v3` (resolves to v3.2.4), GPU | `immich-server:v3.2.4`, **1 replica** (read-mostly copy at `https://immich-standby.dove-komodo.ts.net`) |
-| Postgres | `immich/postgres:14-vectorchord0.4.3-pgvectors0.2.0`, 20Gi local-path | same image, 20Gi local-path, **running, empty until restored** |
+| Server | `immich-server:v3` (resolves to v3.2.4), GPU | `immich-server:v3.2.4`, 1 replica (also at `https://immich-standby.dove-komodo.ts.net`) |
+| Postgres | `immich/postgres:14-vectorchord0.4.3-pgvectors0.2.0`, 20Gi local-path | same image, 20Gi local-path, restored from the Lenovo's dump on 2026-10-17 |
 | Redis | `redis:6.2-alpine` | same |
 | Machine learning | `release-cuda`, GPU | CPU image, **0 replicas, disabled** (not needed on the standby) |
 | Library | 1Ti local-path PVC on the Lenovo's NVMe | external NVMe `HighSpeed2T`, folder `Immich/Backup`, shared into the Lima VM at `/mnt/immich-library` |
-| Public access | Cloudflare tunnel (token-based, routes in the Cloudflare dashboard), backend `http://immich-server.immich.svc.cluster.local:80` | none until a failover |
+| Public access | Cloudflare tunnel `home-brain`; the `immich.kanokgan.com` route was removed on 2026-10-17 | `immich.kanokgan.com` via tunnel `macos-mini` (host `cloudflared`), service `http://localhost:30283` -> Lima port forward -> NodePort Service `immich-server-nodeport` (`apps/zion/immich/nodeport.yaml`) |
 
 Manifests: `apps/base/immich/` (shared) and `apps/zion/immich/` (standby overlay and library volume). Secrets: `apps/zion/immich/secret.sops.yaml` (SOPS, ADR 0007).
 
 ## Data and backups
 
 - Photos, thumbnails, encoded video and Immich's own nightly database dump (`backups/`, written about 00:00 Asia/Bangkok) live in the Immich upload folder.
-- CronJob `immich-library-sync` on the Lenovo copies that folder to the Synology at 04:00 (`rclone copy`, never deletes).
-- FreeFileSync copies the NAS folder onto the mini's NVMe. The standby is only as fresh as the last run of that copy.
+- The Lenovo's CronJob `immich-library-sync` (04:00, `rclone copy`, never deletes) is no longer the source of truth. **A nightly mini to NAS job (04:00, `rclone copy`, run on the Mac host, not in the cluster) is planned and not built yet**, so new uploads on the mini exist only on its NVMe until it runs.
+- Never run FreeFileSync from the NAS to the NVMe again: it would overwrite the mini's newer uploads. The only direction is mini to NAS.
 - NAS external libraries (four personal drives, `/V11Pro`, `/70Mai`) are not mounted on the standby. Their assets will show as unavailable there.
+
+## Cutover to the mini (2026-10-17)
+
+Lenovo put in maintenance mode, manual DB dump (`immich-db-backup-20261017T095245-v3.2.4-pg14.19.sql.gz`), library synced Lenovo to NAS to NVMe (FreeFileSync, about 2 hours), mini pinned to v3.2.4 (the Lenovo's version; the mini had been on v3.3.1 and its migrated DB refused v3.2.4, so its Postgres PVC was recreated), dump checked with `gzip -t`, Lenovo server scaled to 0, database restored through Immich's restore flow, `immich.kanokgan.com` moved from tunnel `home-brain` to `macos-mini`. External libraries and machine learning are not available on the mini. Newer Immich versions (v3.3.x) are a separate upgrade, see the runbook below.
 
 ## Restore test
 
@@ -40,6 +44,8 @@ Before: confirm the NVMe is attached, the Lima VM is running, and the copy on th
 Check these steps against what you actually clicked and correct this section: it was written from the plan, not recorded during the run.
 
 ## Failover (Lenovo unavailable)
+
+Superseded while the mini is production; kept for when the Lenovo is rebuilt and the mini returns to standby.
 
 Only one instance may be writable at a time.
 
@@ -99,8 +105,9 @@ All Immich images are pinned. The Tailscale sidecar (`tailscale/tailscale:latest
 
 ## Open items
 
-- Tailscale access to the standby (see the mini's Tailscale plan).
-- `cloudflared` connector manifest for the mini, and the actual switch procedure.
+- Nightly mini to NAS `rclone` job (04:00) on the Mac host; until then uploads on the mini have no second copy.
+- Upgrade the mini from v3.2.4 to the current release after reading the notes (v3.3.3 was the latest seen on 2026-10-17).
+- Re-enable the external libraries when the Lenovo is rebuilt (their paths are not mounted on the mini).
 - Failback step 3 needs a decision and a test.
 - Automate the NAS to NVMe copy (FreeFileSync schedule) and record how stale is acceptable.
 - Restore from the NVMe copy has been tested once; repeat it from a clean Postgres volume before relying on it.

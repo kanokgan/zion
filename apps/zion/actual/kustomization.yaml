@@ -1,6 +1,6 @@
 # apps/zion/actual/kustomization.yaml
-# Actual Budget on the mini (test endpoint): https://actual-standby.dove-komodo.ts.net, separate server and
-# separate data from the Lenovo. The Lenovo remains production (actual.kanokgan.com) until cutover.
+# Actual Budget on the mini: production since 2026-10-17 at https://actual.kanokgan.com (tunnel macos-mini ->
+# localhost:30506 -> nodeport.yaml); also https://actual-standby.dove-komodo.ts.net. The Lenovo's copy is scaled to 0.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

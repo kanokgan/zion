@@ -6,7 +6,7 @@ Rebuilding Zion Lab from the ad hoc setup into a Git-managed, reproducible one. 
 
 The Mac mini's long-term role is a warm standby for Immich ([ADR 0004](../decisions/0004-mini-as-immich-standby.md)). Once the Lenovo is rebuilt from this repo it becomes `zion` and the mini's cluster is renamed `zion-standby`.
 
-Last updated: 2026-10-12
+Last updated: 2026-10-17
 
 ## Phase 0: Bootstrap
 
@@ -51,8 +51,8 @@ Migration order (ADR 0002): Jellyfin, Plex, Actual Budget, Immich. The Immich st
 |---|---|---|---|---|---|---|---|---|---|
 | Jellyfin | yes (config/metadata) | unknown | no | no (native on the mini, ADR 0008; documented in `hosts/macos-mini/`) | the mini's native install; the Lenovo's Jellyfin is dropped, not migrated | n/a (native) | no | no | no |
 | Plex | yes (config 20Gi, transcode 100Gi on the Lenovo) | unknown | no | no (native on the mini, ADR 0008; documented in `hosts/macos-mini/`) | partly (installed as an app on the mini; Lenovo PVCs seen) | n/a (native) | no | no | no |
-| Actual Budget | yes (10Gi PVC `actual-data`, mounted at `/data`) | no: manual export only | export/import into the mini worked, 2026-10-12 (not a restore of an automated backup) | yes (`apps/base/actual`, `apps/zion/actual`) | yes (26.10.0, Tailscale sidecar, no secrets besides the auth key) | yes (`https://actual-standby.dove-komodo.ts.net`, disposable data) | no | no | no |
-| Immich | yes (library 1Ti, Postgres 20Gi) | yes: nightly Immich DB dump + nightly rclone copy to NAS; copy on mini's external drive (refreshed from the NAS with FreeFileSync) | yes, 2026-10-11 (standby on mini, port-forward only; restored from the Oct 11 dump, recent photos verified) | yes (`apps/base/immich`, `apps/zion/immich`) | yes (see ADR 0004) | yes (standby, server at 1 replica, read-mostly at `https://immich-standby.dove-komodo.ts.net`) | no | no | no |
+| Actual Budget | yes (10Gi PVC `actual-data`, mounted at `/data`) | no: manual export only | export/import into the mini worked, 2026-10-12 (not a restore of an automated backup) | yes (`apps/base/actual`, `apps/zion/actual`) | yes (26.10.0, Tailscale sidecar, no secrets besides the auth key) | yes (`https://actual-standby.dove-komodo.ts.net`) | yes, 2026-10-17 (`actual.kanokgan.com` on the mini; export/import; Lenovo scaled to 0) | skipped by choice (Lenovo wipe follows the Immich checks) | no |
+| Immich | yes (library 1Ti, Postgres 20Gi) | partly: nightly Immich DB dump on the NVMe; the mini to NAS nightly rclone job (04:00) is not built yet, so new uploads have one copy until it is | yes, 2026-10-11 (standby on mini, port-forward only; restored from the Oct 11 dump, recent photos verified) | yes (`apps/base/immich`, `apps/zion/immich`) | yes (see ADR 0004) | yes | yes, 2026-10-17 (restored from the Lenovo's dump; `immich.kanokgan.com` on the mini, Lenovo scaled to 0) | skipped by choice | no |
 
 Found on `zion-old` and not in the migration plan yet; each needs a decision (migrate, replace, or drop):
 - `monitoring`: kube-prometheus, Grafana, Alertmanager (PVCs)

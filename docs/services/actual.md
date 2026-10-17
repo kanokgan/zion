@@ -1,6 +1,6 @@
 # Actual Budget
 
-Personal budgeting app used daily by family (family via `actual.kanokgan.com`, owner via `actual.dove-komodo.ts.net`). Production runs on the Lenovo (`zion-old`). A separate server is being set up on the Mac mini (`zion`) and will take over at cutover.
+Personal budgeting app used daily by family (family via `actual.kanokgan.com`, owner via `actual.dove-komodo.ts.net`). Production runs on the Mac mini (`zion`) since 2026-10-17 (`actual.kanokgan.com` via the `macos-mini` tunnel). The Lenovo's copy (`zion-old`) is scaled to 0 and will be wiped.
 
 ## What runs where
 
@@ -9,7 +9,7 @@ Personal budgeting app used daily by family (family via `actual.kanokgan.com`, o
 | Image | `actualbudget/actual-server:latest` (currently 26.10.0, verified by digest 2026-10-12) | `actualbudget/actual-server:26.10.0` |
 | Data | 10Gi `local-path` PVC `actual-data`, mounted at `/data` | 10Gi `local-path` PVC `actual-data` on the Lima VM disk |
 | Tailscale | sidecar, hostname `actual` | sidecar, hostname `actual-standby` (`https://actual-standby.dove-komodo.ts.net`) |
-| Public | `actual.kanokgan.com` via the Cloudflare tunnel (dashboard config) | none |
+| Public | route removed on 2026-10-17 | `actual.kanokgan.com` via tunnel `macos-mini`, service `http://localhost:30506` -> Lima port forward -> NodePort Service `actual-nodeport` (`apps/zion/actual/nodeport.yaml`) |
 | Config | env `ACTUAL_SERVER_FILES=/data`, `ACTUAL_PORT=5006`; no secrets other than the Tailscale auth key | same |
 
 The two servers are separate and do not share storage (a shared NAS volume was considered and dropped: SQLite over a network share is risky, and mounting the NAS into the VM is not worth it for a short period). Manifests: `apps/base/actual/` and `apps/zion/actual/`. The Tailscale auth key is in `apps/zion/actual/tailscale-auth.sops.yaml`.
@@ -60,9 +60,9 @@ Then open the app and check accounts and recent transactions.
 
 Rollback: revert the commit if the pod never became healthy. If data was migrated, restore the exported zip into the old version on a fresh volume.
 
-## Cutover (yours to run)
+## Cutover (done 2026-10-17)
 
-Not planned in detail yet. Outline: scale the Lenovo's Actual to 0, copy its `/data` into the mini's volume (or import the final export), verify on `actual-standby`, repoint `actual.kanokgan.com` and the Tailscale name, keep the old data about 2 weeks, then remove it from the Lenovo.
+Final export from the Lenovo, its Actual scaled to 0, export imported on the mini (new budget file ID, devices re-downloaded), route moved from `home-brain` to `macos-mini`. A budget export zip was also saved to the NAS. Original outline: scale the Lenovo's Actual to 0, copy its `/data` into the mini's volume (or import the final export), verify on `actual-standby`, repoint `actual.kanokgan.com` and the Tailscale name, keep the old data about 2 weeks, then remove it from the Lenovo.
 
 ## Open items
 
