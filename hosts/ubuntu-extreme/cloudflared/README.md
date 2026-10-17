@@ -9,7 +9,7 @@ Public access for the Lenovo, like the mini's (`hosts/macos-mini/README.md`): `c
    ```sh
    sudo useradd --system --no-create-home --shell /usr/sbin/nologin cloudflared
    sudo install -d -m 0750 -o root -g cloudflared /etc/cloudflared
-   sudo install -m 0640 -o root -g cloudflared /dev/stdin /etc/cloudflared/ubuntu-extreme.token   # paste the token, then Ctrl-D
+   read -rs T; printf '%s\n' "$T" | sudo install -m 0640 -o root -g cloudflared /dev/stdin /etc/cloudflared/ubuntu-extreme.token; unset T   # paste the token; nothing is echoed
    sudo cp cloudflared.service /etc/systemd/system/
    sudo systemctl daemon-reload && sudo systemctl enable --now cloudflared
    ```

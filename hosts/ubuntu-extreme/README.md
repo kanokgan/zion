@@ -10,6 +10,7 @@ This file records what exists on 2026-10-17, so the rebuild does not depend on m
 - No out-of-band access (no IPMI, no wake-on-LAN, no remote power control). A machine that fails to boot needs someone at the keyboard. It is on a UPS.
 - Disk: LVM with ext4 on the NVMe, not encrypted, so a reboot does not wait for a passphrase.
 - `ssh.service` reports `disabled` because sshd is socket-activated on 24.04; confirm `ssh.socket` is `enabled` before any reboot.
+- **Known issue, found 2026-10-17: the wired link runs at 100 Mb/s, not gigabit.** `enp0s31f6` (Intel, gigabit-capable) advertises 1000baseT but the link partner (the home router, a TP-Link, where the NAS is also plugged in) only advertises up to 100baseT, so the port negotiates 100 Mb/s full duplex (`ethtool enp0s31f6`). Real throughput is about 11 MB/s: the 1.3 TB library copy takes about 33 hours, and LAN clients reach Immich at 100 Mb/s at most. Likely the Lenovo's cable or the router port it uses (a cable with two working pairs makes the partner stop offering 1000). Not fixed: needs someone at the machine (swap the cable, try another port, then check `cat /sys/class/net/enp0s31f6/speed` says 1000). Until then, copies to it are throttled (`rsync --bwlimit`) so SSH and Tailscale keep headroom. If someone is at home at the cutover, copying from the mini's NVMe over USB is far faster than the network.
 
 ## State found on 2026-10-17
 
