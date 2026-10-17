@@ -1,0 +1,15 @@
+# hosts/ubuntu-extreme/backup/immich-nas-sync.service
+# Install as /etc/systemd/system/immich-nas-sync.service (the script goes to /usr/local/sbin/). Runs as the owner's
+# user, which holds the rclone config; the library is world-readable. Output goes to the journal:
+#   journalctl -u immich-nas-sync -n 30
+[Unit]
+Description=Copy the Immich library to the Synology
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=kanokgan
+ExecStart=/usr/local/sbin/immich-nas-sync.sh
+Nice=10
+IOSchedulingClass=idle

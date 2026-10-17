@@ -1,0 +1,13 @@
+# hosts/ubuntu-extreme/backup/immich-nas-sync.timer
+# Install as /etc/systemd/system/immich-nas-sync.timer. 04:00 every night (the machine's timezone is
+# Asia/Bangkok), after Immich's own dump at about 00:00. Persistent: a run missed while the machine was off
+# happens at the next boot.
+[Unit]
+Description=Nightly Immich library copy to the Synology
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
