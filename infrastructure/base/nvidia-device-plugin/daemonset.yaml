@@ -1,0 +1,70 @@
+# infrastructure/base/nvidia-device-plugin/daemonset.yaml
+# Advertises the GPU to Kubernetes. Same image as the Lenovo ran (v0.14.5, known to work with driver 580); bump it
+# on purpose. Namespace kube-system and system-node-critical follow the upstream manifest.
+# Differences from the old one: runtimeClassName nvidia (so the NVML libraries are injected without making nvidia
+# the default runtime for every pod), and FAIL_ON_INIT_ERROR=true: a broken driver now crashes this pod instead of
+# leaving the node advertising a GPU that does not work (incident 2026-10-17, hosts/ubuntu-extreme/README.md).
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: nvidia-device-plugin
+    app.kubernetes.io/instance: nvidia-device-plugin
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nvidia-device-plugin
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nvidia-device-plugin
+        app.kubernetes.io/instance: nvidia-device-plugin
+        app.kubernetes.io/part-of: zion-lab
+    spec:
+      runtimeClassName: nvidia
+      priorityClassName: system-node-critical
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: nvidia-device-plugin-ctr
+          image: nvcr.io/nvidia/k8s-device-plugin:v0.14.5
+          args:
+            - --config-file=/config/config.yaml
+          env:
+            - name: FAIL_ON_INIT_ERROR
+              value: "true"
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+            - name: dev
+              mountPath: /dev
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+        - name: dev
+          hostPath:
+            path: /dev
+        - name: config
+          configMap:
+            name: nvidia-device-plugin-config

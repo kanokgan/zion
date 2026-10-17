@@ -1,0 +1,23 @@
+# infrastructure/base/nvidia-device-plugin/configmap.yaml
+# Time-slicing: one physical GPU is advertised as 4 `nvidia.com/gpu`, so Immich's server (transcoding) and
+# machine learning can each request one. Carried over from the Lenovo's ConfigMap of the same purpose (2026-10-17).
+# The GTX 1650 has 4 GB of VRAM, shared by all the slices.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nvidia-device-plugin-config
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: nvidia-device-plugin
+    app.kubernetes.io/instance: nvidia-device-plugin-config
+    app.kubernetes.io/part-of: zion-lab
+data:
+  config.yaml: |
+    version: v1
+    flags:
+      migStrategy: none
+    sharing:
+      timeSlicing:
+        resources:
+          - name: nvidia.com/gpu
+            replicas: 4

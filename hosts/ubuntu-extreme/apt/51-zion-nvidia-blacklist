@@ -1,0 +1,10 @@
+// hosts/ubuntu-extreme/apt/51-zion-nvidia-blacklist
+// Install as /etc/apt/apt.conf.d/51-zion-nvidia-blacklist.
+// Unattended upgrades must not touch the NVIDIA driver or container toolkit: the kernel module and the user-space
+// libraries have to change together, with a reboot (incident on 2026-10-17, see ../README.md).
+// Upgrade them on purpose: apt upgrade, reboot, then check nvidia-smi and a GPU pod.
+Unattended-Upgrade::Package-Blacklist {
+    "nvidia-.*";
+    "libnvidia-.*";
+    "xserver-xorg-video-nvidia-.*";
+};

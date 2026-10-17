@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- hosts/macos-mini/backup/com.zionlab.immich-nas-sync.plist
+     Install as a LaunchDaemon (not an Agent) so it runs at 04:00 without anyone logged in.
+     Runs as the owner's user so it can read ~/.config/rclone/rclone.conf and the NVMe. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.zionlab.immich-nas-sync</string>
+  <key>UserName</key><string>kanokgan</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/kanokgan/Developer/personal/zion/hosts/macos-mini/backup/immich-nas-sync.sh</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict><key>HOME</key><string>/Users/kanokgan</string></dict>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>4</integer><key>Minute</key><integer>0</integer></dict>
+</dict>
+</plist>

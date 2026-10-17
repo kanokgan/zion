@@ -1,0 +1,6 @@
+# infrastructure/extreme/kustomization.yaml
+# Cluster-wide components for the Lenovo (`extreme`): the GPU device plugin. The mini has no GPU and does not use it.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base/nvidia-device-plugin

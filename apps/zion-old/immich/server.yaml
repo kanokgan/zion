@@ -1,0 +1,161 @@
+# apps/zion-old/immich/server.yaml
+# REFERENCE SNAPSHOT of the live immich-server Deployment on zion-old (Lenovo, node k3s-master), taken 2026-10-17
+# from a Lens edit. Flux does NOT sync this folder (clusters/zion applies apps/zion only); it was applied by hand
+# to the Lenovo, and goes away when that machine is wiped and rebuilt (ADR 0009).
+# Sanitized for the public repo: the four personal drive names are Member1Drive..Member4Drive. To apply this to
+# the Lenovo as is, put the real names back (hostPath paths under /mnt) or the pods fail on the missing directories.
+# On 2026-10-17 a restart pulled v3.3.3 (it had been running v3.2.4) because of the floating tag with imagePullPolicy Always.
+# Known deviations from the repo conventions, kept so the snapshot matches what runs: floating image tag `v3`,
+# tailscale `latest`, selector label `app` instead of app.kubernetes.io/name, no app.kubernetes.io labels.
+# GPU: the server asks for one NVIDIA GPU (nvidia.com/gpu) and runs with runtimeClassName nvidia; see
+# hosts/ubuntu-extreme/README.md for what that needs on the host and in the cluster.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-server
+  namespace: immich
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-server
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        app: immich-server
+    spec:
+      runtimeClassName: nvidia
+      serviceAccountName: immich
+      automountServiceAccountToken: true
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: tailscale
+          image: tailscale/tailscale:latest
+          imagePullPolicy: Always
+          env:
+            - name: TS_AUTHKEY
+              valueFrom:
+                secretKeyRef:
+                  name: tailscale-auth
+                  key: TS_AUTHKEY
+            - name: TS_HOSTNAME
+              value: immich
+            - name: TS_STATE_DIR
+              value: /var/lib/tailscale
+            - name: TS_USERSPACE
+              value: "true"
+            - name: TS_SERVE_CONFIG
+              value: /config/serve.json
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          volumeMounts:
+            - name: tailscale-state
+              mountPath: /var/lib/tailscale
+            - name: tailscale-config
+              mountPath: /config
+        - name: immich-server
+          image: ghcr.io/immich-app/immich-server:v3
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 2283
+          envFrom:
+            - configMapRef:
+                name: immich-config
+            - secretRef:
+                name: immich-secrets
+          env:
+            - name: IMMICH_MACHINE_LEARNING_ENABLED
+              value: "true"
+            - name: IMMICH_PORT
+              value: "2283"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 4Gi
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "6"
+              memory: 24Gi
+              nvidia.com/gpu: "1"
+          livenessProbe:
+            httpGet:
+              path: /server-info/ping
+              port: 2283
+            initialDelaySeconds: 600
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /server-info/ping
+              port: 2283
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+          volumeMounts:
+            - name: library
+              mountPath: /usr/src/app/upload
+            - name: member1-drive
+              mountPath: /Member1Drive
+              readOnly: true
+            - name: member2-drive
+              mountPath: /Member2Drive
+              readOnly: true
+            - name: member3-drive
+              mountPath: /Member3Drive
+              readOnly: true
+            - name: member4-drive
+              mountPath: /Member4Drive
+              readOnly: true
+            - name: v11pro-drive
+              mountPath: /V11Pro
+              readOnly: true
+            - name: 70mai-drive
+              mountPath: /70Mai
+              readOnly: true
+      volumes:
+        - name: tailscale-state
+          emptyDir: {}
+        - name: tailscale-config
+          configMap:
+            name: tailscale-serve-config
+        - name: library
+          persistentVolumeClaim:
+            claimName: immich-library-pvc
+        - name: member1-drive
+          hostPath:
+            path: /mnt/Member1Drive
+            type: Directory
+        - name: member2-drive
+          hostPath:
+            path: /mnt/Member2Drive
+            type: Directory
+        - name: member3-drive
+          hostPath:
+            path: /mnt/Member3Drive
+            type: Directory
+        - name: member4-drive
+          hostPath:
+            path: /mnt/Member4Drive
+            type: Directory
+        - name: v11pro-drive
+          hostPath:
+            path: /mnt/temp/V11Pro
+            type: Directory
+        - name: 70mai-drive
+          hostPath:
+            path: /mnt/temp/70Mai
+            type: Directory
