@@ -1,7 +1,7 @@
 # apps/extreme/immich/kustomization.yaml
 # Immich on the Lenovo (cluster `extreme`, ADR 0009): primary, served at https://immich.kanokgan.com (host cloudflared,
-# tunnel ubuntu-extreme -> localhost:30283 -> nodeport.yaml) and at https://immich.dove-komodo.ts.net (Tailscale
-# sidecar in the server pod). Machine learning runs on the GPU (CUDA image, time-sliced, see infrastructure/extreme).
+# tunnel ubuntu-extreme -> localhost:30283 -> nodeport.yaml) and, for debugging this one instance, at
+# https://immich-ubuntu-extreme.dove-komodo.ts.net (Tailscale sidecar in the server pod, tailnet only). Machine learning runs on the GPU (CUDA image, time-sliced, see infrastructure/extreme).
 # The library is the host directory /srv/immich (library.yaml), outside k3s's state.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -103,7 +103,7 @@ patches:
                         name: tailscale-auth
                         key: TS_AUTHKEY
                   - name: TS_HOSTNAME
-                    value: immich
+                    value: immich-ubuntu-extreme
                   - name: TS_KUBE_SECRET
                     value: immich-tailscale-state
                   - name: TS_USERSPACE

@@ -1,6 +1,7 @@
 # apps/extreme/actual/kustomization.yaml
 # Actual Budget on the Lenovo (cluster `extreme`, ADR 0009): served at https://actual.kanokgan.com (host cloudflared,
-# tunnel ubuntu-extreme -> localhost:30506 -> nodeport.yaml) and at https://actual.dove-komodo.ts.net (Tailscale sidecar).
+# tunnel ubuntu-extreme -> localhost:30506 -> nodeport.yaml) and, for debugging this one instance, at
+# https://actual-ubuntu-extreme.dove-komodo.ts.net (Tailscale sidecar, tailnet only).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -48,7 +49,7 @@ patches:
                         name: tailscale-auth
                         key: TS_AUTHKEY
                   - name: TS_HOSTNAME
-                    value: actual
+                    value: actual-ubuntu-extreme
                   - name: TS_KUBE_SECRET
                     value: actual-tailscale-state
                   - name: TS_USERSPACE

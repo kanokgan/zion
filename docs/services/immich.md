@@ -26,6 +26,16 @@ Manifests: `apps/base/immich/` (shared) and `apps/zion/immich/` (standby overlay
 
 Lenovo put in maintenance mode, manual DB dump (`immich-db-backup-20261017T095245-v3.2.4-pg14.19.sql.gz`), library synced Lenovo to NAS to NVMe (FreeFileSync, about 2 hours), mini pinned to v3.2.4 (the Lenovo's version; the mini had been on v3.3.1 and its migrated DB refused v3.2.4, so its Postgres PVC was recreated), dump checked with `gzip -t`, Lenovo server scaled to 0, database restored through Immich's restore flow, `immich.kanokgan.com` moved from tunnel `home-brain` to `macos-mini`. External libraries and machine learning are not available on the mini. Newer Immich versions (v3.3.x) are a separate upgrade, see the runbook below.
 
+## Hostnames
+
+| Name | What | Where |
+|---|---|---|
+| `immich.kanokgan.com` | production, public through Cloudflare | whichever machine is primary |
+| `immich-ubuntu-extreme.dove-komodo.ts.net` | debug, tailnet only (Tailscale sidecar) | the Lenovo's instance |
+| `immich-macos-mini.dove-komodo.ts.net` | debug, tailnet only (Tailscale sidecar) | the mini's instance. Today the mini's sidecar is still `immich-standby`; it is renamed in the cutover commit, because changing it restarts the live pod |
+
+Pattern: `<app>-<machine>`, the machine names of the naming convention. Actual follows the same pattern.
+
 ## Runbook: cutover back to the Lenovo (ADR 0009, draft, to be run by the owner)
 
 The Lenovo is rebuilt as the cluster `extreme` (`hosts/ubuntu-extreme/`, `clusters/extreme/`, `apps/extreme/`), its server held at 0 replicas, and the library copied from the NAS into `/srv/immich`. This moves production back. Rollback until the first upload on the Lenovo: move the hostname back to the mini's tunnel and start the mini's server again.
@@ -37,10 +47,10 @@ Ready when all of these are true:
 - A fresh Actual export is on the NAS, and the family knows uploads pause for a few hours.
 
 Cutover (downtime starts at step 1):
-1. Mini: in the Immich admin UI create a database backup (Administration, Jobs), wait for it, then put Immich in maintenance mode. Scale the mini's server to 0 by committing `replicas: 0` in `apps/zion/immich/kustomization.yaml` (otherwise Flux scales it back).
+1. Mini: in the Immich admin UI create a database backup (Administration, Jobs), wait for it, then put Immich in maintenance mode. Scale the mini's server to 0 by committing `replicas: 0` in `apps/zion/immich/kustomization.yaml` (otherwise Flux scales it back); in the same commit change the sidecar `TS_HOSTNAME` from `immich-standby` to `immich-macos-mini` (same for Actual: `actual-standby` to `actual-macos-mini`), since no live pod is restarted by it any more.
 2. Mini: run `hosts/macos-mini/backup/immich-nas-sync.sh` by hand; check its log shows no errors. Then **disable its nightly job** (`sudo launchctl bootout system /Library/LaunchDaemons/com.zionlab.immich-nas-sync.plist`): only one machine may write to that NAS path.
 3. Lenovo: copy the delta, the same command as the first copy (`rsync` from `/mnt/ZionLabs/Immich/Backup/` to `/srv/immich/`). Check the new dump is there: `ls -lt /srv/immich/backups | head -3` and `gzip -t` on it.
-4. Lenovo: commit `replicas: 1` for `immich-server` in `apps/extreme/immich/kustomization.yaml`; wait for the pod (2/2). Open `https://immich.dove-komodo.ts.net`: the first-run page. Do not create an admin. Restore from the newest `immich-db-backup-*-v3.2.4-pg14.19.sql.gz`, then log in with the existing admin account.
+4. Lenovo: commit `replicas: 1` for `immich-server` in `apps/extreme/immich/kustomization.yaml`; wait for the pod (2/2). Open `https://immich-ubuntu-extreme.dove-komodo.ts.net`: the first-run page. Do not create an admin. Restore from the newest `immich-db-backup-*-v3.2.4-pg14.19.sql.gz`, then log in with the existing admin account.
 5. Verify before any traffic moves: a recent photo, an old photo, a video, thumbnails; pause the smart search and face queues if ML misbehaves (the GPU should now run them); an upload from the tailnet address lands in `/srv/immich/upload`. Check a transcode job uses the GPU (`nvidia-smi` while it runs). The external libraries are still not mounted.
 6. Cloudflare: move `immich.kanokgan.com` from tunnel `macos-mini` to `ubuntu-extreme` (service `http://localhost:30283`). Test from a phone off Wi-Fi and off Tailscale: log in, scroll, upload.
 7. Lenovo: enable the nightly backup timer (`sudo systemctl enable --now immich-nas-sync.timer`).
