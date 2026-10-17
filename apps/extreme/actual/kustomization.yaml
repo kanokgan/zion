@@ -9,21 +9,12 @@ resources:
   - nodeport.yaml
   - tailscale.yaml
   - tailscale-auth.sops.yaml
-# Actual version: the ONE place to edit for an upgrade (runbook: docs/services/actual.md). Same as the mini
-# (26.10.0) until the cutover back to the Lenovo; upgrade only after it.
+# Actual version: the ONE place to edit for an upgrade (runbook: docs/services/actual.md). Production since
+# 2026-10-17; the mini's overlay keeps the same version until its copy is stopped.
 images:
   - name: actualbudget/actual-server
     newTag: 26.10.0
 patches:
-  # Actual stays at 0 until its data is imported (cutover, ADR 0009): an empty server offers first-run password
-  # setup to anyone on the tailnet. Set to 1 in the cutover commit.
-  - target:
-      kind: Deployment
-      name: actual
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 1
   - target:
       kind: Deployment
       name: actual

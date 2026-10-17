@@ -17,23 +17,7 @@ spec:
     - name: infrastructure
   path: ./apps/extreme
   prune: true
-  # Not `wait: true`: until the Actual cutover that Deployment is held at 0 replicas, and its local-path volume
-  # stays Pending without a pod, so waiting on everything would never report Ready. Health is checked on the
-  # Immich Deployments instead. At the cutover (replicas back to 1) switch back to `wait: true` and drop healthChecks.
-  wait: false
-  healthChecks:
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: immich-postgres
-      namespace: immich
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: immich-redis
-      namespace: immich
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: immich-machine-learning
-      namespace: immich
+  wait: true
   timeout: 10m
   sourceRef:
     kind: GitRepository
