@@ -89,6 +89,10 @@ spec:
 
     alertmanager:
       alertmanagerSpec:
+        # The whole configuration (routes, the Telegram receiver, token and chat ID) is the encrypted Secret
+        # alertmanager-config (alertmanager-config.sops.yaml). Not useExistingSecret: the chart's own default
+        # Secret keeps existing, unused, so nothing fights over it.
+        configSecret: alertmanager-config
         resources:
           requests:
             cpu: 25m
@@ -106,8 +110,57 @@ spec:
         limits:
           cpu: 500m
           memory: 512Mi
-      # Stateless: dashboards and data sources come from Git. The admin password is generated into a Secret
-      # for now and becomes a SOPS secret in stage 2.
+      # Stateless: dashboards and data sources come from Git; only the admin login comes from a SOPS secret.
+      admin:
+        existingSecret: grafana-admin
+        userKey: admin-user
+        passwordKey: admin-password
+      grafana.ini:
+        server:
+          # The tailnet address of the sidecar below. After login Grafana redirects here, so a port-forward to
+          # localhost still needs the tailnet to be reachable from that machine.
+          root_url: https://grafana-ubuntu-extreme.dove-komodo.ts.net
+      # The pod runs as the ServiceAccount that the Tailscale sidecar needs (grafana-tailscale.yaml); the chart's own
+      # RBAC for the dashboard sidecars binds to this name too.
+      serviceAccount:
+        create: false
+        name: grafana-tailscale
+      extraContainerVolumes:
+        - name: tailscale-config
+          configMap:
+            name: tailscale-serve-config
+      # Tailscale sidecar, same pattern as Immich and Actual: tailnet-only access, name <app>-<machine>.
+      # Deliberate exception to "pin image versions": a backward-compatible networking client that should pick up
+      # security fixes (docs/services/immich.md). The key is only used on first join; the identity then lives in
+      # the Secret grafana-tailscale-state.
+      extraContainers: |
+        - name: tailscale
+          image: tailscale/tailscale:latest
+          imagePullPolicy: Always
+          env:
+            - name: TS_AUTHKEY
+              valueFrom:
+                secretKeyRef:
+                  name: tailscale-auth
+                  key: TS_AUTHKEY
+            - name: TS_HOSTNAME
+              value: grafana-ubuntu-extreme
+            - name: TS_KUBE_SECRET
+              value: grafana-tailscale-state
+            - name: TS_USERSPACE
+              value: "true"
+            - name: TS_SERVE_CONFIG
+              value: /config/serve.json
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: tailscale-config
+              mountPath: /config
 
     kube-state-metrics:
       resources:

@@ -1,0 +1,25 @@
+# TEMPLATE, placeholders only. Copy to ../tailscale-auth.sops.yaml, fill in, then: sops --encrypt --in-place ../tailscale-auth.sops.yaml
+# The key is only used when the sidecar first joins the tailnet (its identity is then kept in grafana-tailscale-state).
+# See README.md in this folder. Never commit the filled-in file before encrypting it.
+apiVersion: v1
+kind: Secret
+metadata:
+    name: tailscale-auth
+    namespace: monitoring
+stringData:
+    TS_AUTHKEY: ENC[AES256_GCM,data:8wwiMYLIIfzYSs5XSxC7eA21W16COqHNjca38Aerds572LsXiTsNmJgOVNPC1i2l55SSI99J9Zlt47ObpBc=,iv:PfKtxxoD5C3z9D5WAGenj+6EefhQSmhIUkrlbuYk3W8=,tag:ScRaxh3FlR3pByus7jJLyQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBhUDN5dHBsYmdRQTVUMElv
+            dUMrQ25NYjVTdGFUNnYwWTd2bG1nQXd5OFE0Ci84T2t3OTBDMEpOejlvYncxUmZC
+            RUNUMWczanBIZ1AxNGtncEVBMDl0OEUKLS0tIFU1VUlJNktmaDFYTHF3dHExSy9H
+            RnFJbjZjZzdsV3ROcWlTb3ZCd0huZ2cKpF7Svp+oFXorInnMfz3tg/lLYDaxO+1b
+            bRGy1L3iqtAQMCBh7zylD45/Bw0igShnVL6H/qEJTQIc2kWYibg9ng==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1v4nsu2yecf96sega4h32sznnurqwdngurhu3vkxmu2v7vr67zc8seq5nqn
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-18T01:31:47Z"
+    mac: ENC[AES256_GCM,data:GrkxpI6meWDaQVxVKDVtFiVPxONPuOiA1ZYDY8lKUfEKoDP3Fe8VIsarIG4pu50UqWGixH6YaClds1RpSXJs7sD/4i4ItvdhmMJUpwFtKmOZaXvbW60/SpIm1DyhaJ8IB38FG+PqdVPh8c9dbeSn0NFWo+hDhS2ujMjlqt3VqDs=,iv:cPibRFTzNO8iWDQ2dFr8HBDlAO2ELnmBsJf6H5rxqtg=,tag:awi/ZOfRYW294c1MOifuYg==,type:str]
+    version: 3.13.3

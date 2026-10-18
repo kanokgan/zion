@@ -1,0 +1,25 @@
+# TEMPLATE, placeholders only. Copy to ../grafana-admin.sops.yaml, fill in, then: sops --encrypt --in-place ../grafana-admin.sops.yaml
+# See README.md in this folder. Never commit the filled-in file before encrypting it.
+apiVersion: v1
+kind: Secret
+metadata:
+    name: grafana-admin
+    namespace: monitoring
+stringData:
+    admin-user: ENC[AES256_GCM,data:aZ5RaMSVOV4=,iv:0FFUGByV8AlTI2FJjYPX19Dm3DIghkCd2YGK4E0+Cdo=,tag:fsjXaxMJcuiQOANRvjGUsw==,type:str]
+    admin-password: ENC[AES256_GCM,data:YYeOdGtFnC0C,iv:HplCcLTVY2f1TVTmoKWV9BnTUaJXoFZ7m6RSmQ2Xh7I=,tag:gX9tiLc4y7setaPLWh+kVg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBjZm8rbGJxYlZKOGZ3a1k1
+            TENPZko5UUdYbGlrNkgyTHlYeUgzRUk5c0dRClFJcHZUV245aW0xWE1tdkFtc3NJ
+            Qkl2QXp2c0ZoYjdJYW1rdzUxTmE4TVkKLS0tIDlGOHR1aGRXWWV6c0R4Z0l3SEd3
+            cU1pT0xRWFJLUEl5dGdaUjVTT1daZWsKj7m3QDlFVQook1pdXcC7tCPB5gur3aC8
+            iLfC+JPIzqNtuOq8a4Bf37EISNeXmONF8iraLbI0gWDCbzy8hzwyzg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1v4nsu2yecf96sega4h32sznnurqwdngurhu3vkxmu2v7vr67zc8seq5nqn
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-18T01:30:33Z"
+    mac: ENC[AES256_GCM,data:nepO+qUJieHvdsxubicurk1YSsCXJH4D0iZ43lp2s4m8PawpEjyW2lQW1rw2a+1bebHLWtSsTcFzEaem+gFqsALJM06d0acLyz2mjkIHjR13TcuXpYFtxmHQCtHSeR87zdokeCfzaP3zSVmXHDVFOcT+h+2txWHIFy/iMIJXnko=,iv:0GGkoxzL9djKGcLEVYPqPEpKQ1uD95yAaobKcyCuENY=,tag:LRw8u4g2sFIKYXBZiqtDrg==,type:str]
+    version: 3.13.3

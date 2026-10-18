@@ -1,7 +1,7 @@
 # infrastructure/extreme/monitoring/kustomization.yaml
 # Monitoring on the Lenovo (ADR 0010), applied by its own Flux Kustomization (clusters/extreme/monitoring.yaml)
 # so a failing monitoring release cannot block the apps. This folder is not part of ../kustomization.yaml.
-# secrets/ holds templates only and is not applied; the real *.sops.yaml files are listed here once they exist.
+# secrets/ holds templates only and is not applied; the three encrypted secrets below were made from them.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -10,3 +10,6 @@ resources:
   - rules/homelab-alerts.yaml
   - flux-podmonitor.yaml
   - grafana-tailscale.yaml
+  - alertmanager-config.sops.yaml
+  - grafana-admin.sops.yaml
+  - tailscale-auth.sops.yaml

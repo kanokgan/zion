@@ -1,0 +1,27 @@
+# TEMPLATE, placeholders only. Copy to ../alertmanager-config.sops.yaml, fill in, then: sops --encrypt --in-place ../alertmanager-config.sops.yaml
+# The whole Alertmanager configuration lives in this one encrypted Secret, so the bot token and your Telegram chat ID
+# are never in Git in plain text. The Secret name is the one the Prometheus Operator reads for the Alertmanager
+# called kube-prometheus-stack-alertmanager (used with alertmanagerSpec.useExistingSecret).
+# See README.md in this folder. Never commit the filled-in file before encrypting it.
+apiVersion: v1
+kind: Secret
+metadata:
+    name: alertmanager-kube-prometheus-stack-alertmanager
+    namespace: monitoring
+stringData:
+    alertmanager.yaml: ENC[AES256_GCM,data:XhLsjbhXx+7LDBLG0A+YUP2gRYMRFM89M0KQgEv7sa6MhIe5OLqI/eZ6MJRVqw/cpeNwyx/tOeWxQvMLLrwQQC2UgGRU94fl+xii2tZOb218Sye9Toi1IskUa2xUCHQR7ISssitcQoQ8gx5xyVQKgX54lMLtaQEkg+MkE42VYs8Fiw6ZlTqWvboqIX0M04PW3sm/bU6y18xoaOU9L+bsDu22UzI7KJ+Cw8+daM+UBkUd25Ky5RbVWEnVUh7hwy+YcesWnHplAHkkTSKUq/tkuZIKSlG5EFPgXyVYj98l9i5D2AhRhNabCPl8KPar14CEO5up5GED9DOWUIVgI3lyAQ/ZpjDmUc06qPPmXPARqZ55cOoslw13iqn6H0y+wOw+RIBnhzZKRddpM9t7zw+1Mxl6cQB4Lad1WY+9q7HIb5r2m9lX7JHzcqvxBoaqFuZ2Tayn/pGLyaQBG0h4tROWqYbUGHKLe7WJUXBSETb3TK0mRcJiQ71IdqC5DMyK/9T2jQFFvJYU/+t9tY/5WNKZv5CeMcRJ2vxG86NH1dKZWKUo1RLh2VCsEk8U7kptH0ArXj1YuumIbV1OFzWRju3gFVNeacj+cJU2Q8fyNtxpNnmBtq6kSa3x9jTtkkIfEMEaG+EBCTuUX9BaqRb/TluSFuTbaAw0HIE+B1Q+THGFyeMzRcC2wwXRTLD93eZbjTkrFpXwoHE7zxIeeOZZ616o2YU3v2jTAYuqb8sI16fOZ5FnVRSG1wDW7q9154FUejDsV2SFhyxvO1WFazEYBxcvuNEAxzDAYAVZhGkisvpUiRRyDSTWYAnXJ7knN77xb9JI/8wwt1QPOpBw5L1wkbSCd0/kX8C6R1aksZ2Pw8MTJ8dXPoKGvAxgq/9NHthu57KAN0ZPWndetEcFHKRopVtYRDEwSNPKrfaLm5pEwcaQYKNGeh8/aBIe1PeiRT38Iq3DxKWjAeD4BODyAvIGvQxNitbuobVllqXR+GHdiEiq0Zfh7UZBe+7mKeHzCxPohZ5lxAKxWTDbn1i0D4j5HwD87jxoj30kBJF7Kf/Oa9sdgVZVYFZXC5NLybnlWwNzh/iglw+QBKW9EEU/Qa47,iv:rKPW8ibPEKlaf+7Tm5oE5rUoRoJO/cDl/CgVpcMSiDk=,tag:MpHu5RAPDaFslcQuhkRV7A==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBPTjdkZDNZSVUwRlQ2NnEx
+            djl2V2FuZ2hUc1IrUjdDb01ud0s3NmpoMHl3CjRUb0hqVXpuU1ZISk9jSUcxNlZa
+            N1dQZ21DcmdMTmMzbGJ5TFFXKzQwdmMKLS0tIEVTa0YyMDZiMjlESzgxQ2RBeVg3
+            a0V1dTFDWjhRQnFKYnNPVUEzRlIwMzgKN+NEPCCt0snigWlJRP5ZQUAoLMB6jo4T
+            ppW1xRebOpsLe5HnOgfk5K58+BjEEWEe0RQIEQHk39HvE8qVHTtnUA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1v4nsu2yecf96sega4h32sznnurqwdngurhu3vkxmu2v7vr67zc8seq5nqn
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-18T01:28:51Z"
+    mac: ENC[AES256_GCM,data:RVv+AJ5bKjGuWoPpqYgrleKXCvtHOOQpupztgVY1M4X3Eu84ErW58Yg5njJK0Mj1WbrQncDBU7wYD/3eHR3+QTfzcSpRt1UpGHTTk/dyiJhf6M+JhQUDeixa/QUT83rRq5/JGegkx7rsh6KSORByd4NeD/iO+Eg0EOwZpadvDyk=,iv:cOGhF94+nqbf+EdYbK/7ClzAheTihmN+ygnWB3FAkbA=,tag:1WcqO8DGVoVdcwxkgHdEFg==,type:str]
+    version: 3.13.3
