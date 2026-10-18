@@ -20,7 +20,7 @@ Last updated: 2026-10-17
 
 - [x] Lima VM + k3s v1.33.6+k3s1 running (`hosts/macos-mini/lima/zion.yaml`, ADR 0003); kubeconfig context `zion`
 - [x] Flux bootstrapped, syncing `clusters/zion/` with a read-only deploy key (ADR 0005)
-- [x] Tailscale access to `zion`: API published on the tailnet at `macos-mini.dove-komodo.ts.net:6443` (`tailscale serve`, tailnet only); Lens connects with a separate kubeconfig (`tls-server-name: localhost`); Immich standby at `https://immich-standby.dove-komodo.ts.net` via a Tailscale sidecar
+- [x] Tailscale access to `zion`: API published on the tailnet at `macos-mini.dove-komodo.ts.net:6443` (`tailscale serve`, tailnet only); Lens connects with a separate kubeconfig (`tls-server-name: localhost`); Immich on the mini at `https://immich-macos-mini.dove-komodo.ts.net` via a Tailscale sidecar
 - [ ] Read-only kubeconfig for Lens (it currently uses the admin credential)
 - [ ] Check the tailnet ACL: devices shared from another account must not reach the mini's port 6443
 - [ ] VM start at boot (blocked by the FileVault decision)

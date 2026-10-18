@@ -1,6 +1,6 @@
 # apps/zion/immich/kustomization.yaml
 # Mini overlay (ADR 0004): production since 2026-10-17, served at https://immich.kanokgan.com (tunnel macos-mini ->
-# localhost:30283 -> nodeport.yaml) and at https://immich-standby.dove-komodo.ts.net (Tailscale sidecar in the
+# localhost:30283 -> nodeport.yaml) and at https://immich-macos-mini.dove-komodo.ts.net (Tailscale sidecar in the
 # server pod). ML stays at 0. Uploads live on the NVMe: never refresh it from the NAS (the sync goes mini -> NAS only).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -61,7 +61,7 @@ patches:
                         name: tailscale-auth
                         key: TS_AUTHKEY
                   - name: TS_HOSTNAME
-                    value: immich-standby
+                    value: immich-macos-mini
                   - name: TS_KUBE_SECRET
                     value: immich-tailscale-state
                   - name: TS_USERSPACE

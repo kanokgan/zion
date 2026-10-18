@@ -6,7 +6,7 @@ Photo library used daily by family. Since 2026-10-17 the Mac mini (`zion`) serve
 
 | | Lenovo (`extreme`, rebuilt 2026-10-17, server held at 0 until the cutover) | Mac mini (`zion`, production since 2026-10-17) |
 |---|---|---|
-| Server | `immich-server:v3.2.4`, one GPU slice (transcoding) | `immich-server:v3.2.4`, 1 replica (also at `https://immich-standby.dove-komodo.ts.net`) |
+| Server | `immich-server:v3.2.4`, one GPU slice (transcoding) | `immich-server:v3.2.4`, 1 replica (also at `https://immich-macos-mini.dove-komodo.ts.net`) |
 | Postgres | `immich/postgres:14-vectorchord0.4.3-pgvectors0.2.0`, 20Gi local-path, empty until the restore | same image, 20Gi local-path, restored from the Lenovo's dump on 2026-10-17 |
 | Redis | `redis:6.2-alpine` | same |
 | Machine learning | `immich-machine-learning:v3.2.4-cuda`, 1 replica on a GPU slice | CPU image, **0 replicas, disabled** (no GPU) |
@@ -32,7 +32,7 @@ Lenovo put in maintenance mode, manual DB dump (`immich-db-backup-20261017T09524
 |---|---|---|
 | `immich.kanokgan.com` | production, public through Cloudflare | whichever machine is primary |
 | `immich-ubuntu-extreme.dove-komodo.ts.net` | debug, tailnet only (Tailscale sidecar) | the Lenovo's instance |
-| `immich-macos-mini.dove-komodo.ts.net` | debug, tailnet only (Tailscale sidecar) | the mini's instance. Today the mini's sidecar is still `immich-standby`; it is renamed in the cutover commit, because changing it restarts the live pod |
+| `immich-macos-mini.dove-komodo.ts.net` | debug, tailnet only (Tailscale sidecar) | the mini's instance (renamed from `immich-standby` on 2026-10-18, while the pod was down anyway) |
 
 Pattern: `<app>-<machine>`, the machine names of the naming convention. Actual follows the same pattern.
 
@@ -47,7 +47,7 @@ Ready when all of these are true:
 - A fresh Actual export is on the NAS, and the family knows uploads pause for a few hours.
 
 Cutover (downtime starts at step 1):
-1. Mini: in the Immich admin UI create a database backup (Administration, Jobs), wait for it, then put Immich in maintenance mode. Scale the mini's server to 0 by committing `replicas: 0` in `apps/zion/immich/kustomization.yaml` (otherwise Flux scales it back); in the same commit change the sidecar `TS_HOSTNAME` from `immich-standby` to `immich-macos-mini` (same for Actual: `actual-standby` to `actual-macos-mini`), since no live pod is restarted by it any more.
+1. Mini: in the Immich admin UI create a database backup (Administration, Jobs), wait for it, then put Immich in maintenance mode. Scale the mini's server to 0 by committing `replicas: 0` in `apps/zion/immich/kustomization.yaml` (otherwise Flux scales it back); in the same commit change the Actual sidecar `TS_HOSTNAME` from `actual-standby` to `actual-macos-mini` (the Immich one is already `immich-macos-mini`), since no live pod is restarted by it any more.
 2. Mini: run `hosts/macos-mini/backup/immich-nas-sync.sh` by hand; check its log shows no errors. Then **disable its nightly job** (`sudo launchctl bootout system /Library/LaunchDaemons/com.zionlab.immich-nas-sync.plist`): only one machine may write to that NAS path.
 3. Lenovo: copy the delta, the same command as the first copy (`rsync` from `/mnt/ZionLabs/Immich/Backup/` to `/srv/immich/`). Check the new dump is there: `ls -lt /srv/immich/backups | head -3` and `gzip -t` on it.
 4. Lenovo: commit `replicas: 1` for `immich-server` in `apps/extreme/immich/kustomization.yaml`; wait for the pod (2/2). Open `https://immich-ubuntu-extreme.dove-komodo.ts.net`: the first-run page. Do not create an admin. Restore from the newest `immich-db-backup-*-v3.2.4-pg14.19.sql.gz`, then log in with the existing admin account.
@@ -76,7 +76,7 @@ Before: confirm the NVMe is attached, the Lima VM is running, and the copy on th
 1. The resting state is 1 replica. If `apps/zion/immich/kustomization.yaml` has the `immich-server` replicas value at `0`, set it to `1`, commit and push.
 2. `flux reconcile kustomization apps --with-source --context zion`
 3. Wait for `kubectl --context zion get pods -n immich` to show `immich-server` `1/1 Running`.
-4. Open `https://immich-standby.dove-komodo.ts.net` (or `kubectl --context zion port-forward -n immich svc/immich-server 2283:80` and `http://localhost:2283`).
+4. Open `https://immich-macos-mini.dove-komodo.ts.net` (or `kubectl --context zion port-forward -n immich svc/immich-server 2283:80` and `http://localhost:2283`).
 5. On an empty database, restore from the newest `immich-db-backup-*-v3.2.4-pg14.19.sql.gz` using Immich's restore from backup.
 6. Log in and check recent photos, an old photo, and thumbnails.
 
@@ -140,7 +140,7 @@ Other Immich images (`postgres`, `redis`) are pinned in `apps/base/immich/` and 
 
 ## Image pinning exception
 
-All Immich images are pinned. The Tailscale sidecar (`tailscale/tailscale:latest`, `imagePullPolicy: Always`) is a deliberate exception: it is a backward-compatible networking client and should pick up security fixes without a commit. Cost: starting the pod needs Docker Hub reachable, and a bad release could break `immich-standby` without a commit to point at. If that happens, pin a stable `vX.Y.Z` tag (check Docker Hub for what exists).
+All Immich images are pinned. The Tailscale sidecar (`tailscale/tailscale:latest`, `imagePullPolicy: Always`) is a deliberate exception: it is a backward-compatible networking client and should pick up security fixes without a commit. Cost: starting the pod needs Docker Hub reachable, and a bad release could break `immich-macos-mini` without a commit to point at. If that happens, pin a stable `vX.Y.Z` tag (check Docker Hub for what exists).
 
 ## Open items
 
