@@ -8,7 +8,7 @@ Personal budgeting app used daily by family. Since 2026-10-17 production runs on
 |---|---|---|
 | Image | `actualbudget/actual-server:26.10.0` | `actualbudget/actual-server:26.10.0` |
 | Data | 10Gi `local-path` PVC `actual-data`, mounted at `/data` | 10Gi `local-path` PVC `actual-data` on the Lima VM disk |
-| Tailscale (debug, tailnet only) | sidecar `actual-ubuntu-extreme`: `https://actual-ubuntu-extreme.dove-komodo.ts.net` | sidecar `actual-standby` today; renamed `actual-macos-mini` in the commit that stops it |
+| Tailscale (debug, tailnet only) | sidecar `actual-ubuntu-extreme`: `https://actual-ubuntu-extreme.dove-komodo.ts.net` | sidecar `actual-macos-mini` (renamed from `actual-standby` on 2026-10-18) |
 | Public | `actual.kanokgan.com` via tunnel `ubuntu-extreme` (`cloudflared` on the host), service `http://localhost:30506` -> NodePort Service `actual-nodeport` (`apps/extreme/actual/nodeport.yaml`) | none: the route moved to the Lenovo's tunnel |
 | Config | env `ACTUAL_SERVER_FILES=/data`, `ACTUAL_PORT=5006`; no secrets other than the Tailscale auth key | same |
 
@@ -27,7 +27,7 @@ Optional later: a CronJob that copies `/data` to the NAS over SFTP on the LAN (n
 ## Restore test (on the mini, with disposable data)
 
 1. In the Lenovo's Actual: Settings, Export data. Keep the zip safe (it contains the budget).
-2. On `https://actual-standby.dove-komodo.ts.net`: set a server password on first open, then import the budget from the zip.
+2. On `https://actual-macos-mini.dove-komodo.ts.net`: set a server password on first open, then import the budget from the zip.
 3. Check accounts, recent transactions and the balances against the Lenovo.
 4. Result: export from the Lenovo and import on the mini worked (2026-10-12).
 

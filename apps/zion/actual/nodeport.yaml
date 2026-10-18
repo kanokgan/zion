@@ -1,7 +1,7 @@
 # apps/zion/actual/nodeport.yaml
-# Public path for actual.kanokgan.com on the mini: the host's cloudflared (tunnel macos-mini) cannot resolve
-# cluster DNS, so Actual is also reachable on a fixed NodePort. Lima forwards guest 30506 to the Mac's
-# 127.0.0.1:30506 (hosts/macos-mini/lima/zion.yaml); the tunnel route points at http://localhost:30506.
+# Fixed NodePort for Actual on the mini, because the host's cloudflared cannot resolve cluster DNS. Lima forwards
+# guest 30506 to the Mac's 127.0.0.1:30506 (hosts/macos-mini/lima/zion.yaml). No tunnel route points at it today:
+# actual.kanokgan.com is on the Lenovo's tunnel. Kept so a failover only needs a dashboard change.
 apiVersion: v1
 kind: Service
 metadata:
