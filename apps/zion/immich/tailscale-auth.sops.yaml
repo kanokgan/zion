@@ -4,7 +4,7 @@ metadata:
     name: tailscale-auth
     namespace: immich
 stringData:
-    TS_AUTHKEY: ENC[AES256_GCM,data:8nT+vD9Ypu1mmmZXOTRKs0ioMm9fhv/SS4fhjo3vMKXCa7a6EzLgz4P4MbbJ+M/hyl/LWZMJoe55jIyz/Q==,iv:cakZ4X41IEzCYSMI9WmjJH8kT9JnnX9wPGlN8ZdX7Zo=,tag:F1br4jpKEWREKJp9RwZKWg==,type:str]
+    TS_AUTHKEY: ENC[AES256_GCM,data:TYnE6DPPXf7STbI0JSSq9KNJfrPWckUgfV+aK1tfhBo7VMkv9vnc0vykl/f46iTqI71ZbP23HOYPBNIbvCg=,iv:JSq4NUyvGNip60+RkHRVo1w2mAvaUjyrTyvd87S865M=,tag:/XEzoSec0l2KUoUcItbT3w==,type:str]
 sops:
     age:
         - enc: |
@@ -17,6 +17,6 @@ sops:
             -----END AGE ENCRYPTED FILE-----
           recipient: age1v4nsu2yecf96sega4h32sznnurqwdngurhu3vkxmu2v7vr67zc8seq5nqn
     encrypted_regex: ^(data|stringData)$
-    lastmodified: "2026-10-11T11:32:07Z"
-    mac: ENC[AES256_GCM,data:cYdaBD7XyqwpmZAXLBZi++W8qfUWv/WD9tTKk6Ko7xwcnYq6TKaOS0jAQaImYd36sAuqKjKyO3Et9saHgxGmNMuPPwsPvo26792lfLftFKKtqgIEN1Nct0g9DYIfZQpohin+XADsbKuj1+yjeddwxuTP1yqlVAUA/qg/I22oITI=,iv:yY1wYcKeZT9x0hSt07MNLxPVo8DlGnsw34FZ+ZXpaTU=,tag:l1sOspepZQ3NFiIZc9qhjQ==,type:str]
+    lastmodified: "2026-10-18T14:56:10Z"
+    mac: ENC[AES256_GCM,data:DCogL7SCOnpyrVMaSRg0mviUPotfKRYMBuHu2PTGOzGIsYNwsBmO3JmR0is9MlXykDlJwsdxsujWEq6SlC6n7q4gl5+Y35rH9+v5hrmdh8dFvzb/E3o0aSZTkkq168Q+Rx+iQqwIS5QTQJdhi+2k1tUL3cKG/jCK8YXUw3DxV8E=,iv:TptpAmp3hiGgjTQWAbvsRrDro/WEALS11VNt6ChUWcg=,tag:8WumtP10g494fq4Fstmxxw==,type:str]
     version: 3.13.3
