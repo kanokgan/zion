@@ -1,0 +1,29 @@
+# infrastructure/extreme/monitoring/flux-podmonitor.yaml
+# Scrapes the Flux controllers (labelled `app: <name>`, port `http-prom`; checked against clusters/extreme/flux-system).
+# Only the controllers installed here exist (helm, kustomize, source); the others in the list simply never match.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: flux-system
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: flux-system
+    app.kubernetes.io/instance: flux-podmonitor
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  namespaceSelector:
+    matchNames:
+      - flux-system
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - helm-controller
+          - source-controller
+          - kustomize-controller
+          - notification-controller
+          - image-automation-controller
+          - image-reflector-controller
+  podMetricsEndpoints:
+    - port: http-prom

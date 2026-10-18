@@ -22,3 +22,8 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
+  # Decrypts *.sops.yaml with the sops-age key (ADR 0007): Grafana admin, Tailscale key, Alertmanager config.
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age

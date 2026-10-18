@@ -34,14 +34,16 @@ In Prometheus, Status, then Targets: everything `UP` except nothing for etcd, sc
 
 ## Stages (ADR 0010)
 
-1. Stack on the Lenovo, checked through a port-forward (this document).
-2. SOPS secrets (Grafana admin, Telegram bot token), Grafana reachable on the tailnet as `grafana-ubuntu-extreme`, alert rules: disk over 80%, link speed below 1000 Mb/s, device-plugin DaemonSet unavailable, Flux not ready, crash loops.
+1. Stack on the Lenovo, checked through a port-forward: done (2026-10-17).
+2. Alerts, tailnet access and Telegram, in two parts so Flux never references a Secret that does not exist:
+   - **Part A (in the repo):** alert rules (disk over 80% and 90%, link below 1 Gb/s, no GPU advertised, device plugin down, Flux reconcile errors; crash loops and node problems come from the chart's default rules), scraping of the Flux controllers, the Grafana tailnet sidecar's ServiceAccount and serve config, and the SOPS templates in `infrastructure/extreme/monitoring/secrets/`. Note: the link-speed alert fires today and keeps firing until the Lenovo's 100 Mb/s link is fixed.
+   - **Part B (after the three encrypted secrets exist):** the HelmRelease uses the Grafana admin secret, adds the sidecar `grafana-ubuntu-extreme` (`https://grafana-ubuntu-extreme.dove-komodo.ts.net`, tailnet only) and the Telegram Alertmanager config.
 3. Immich metrics and the backup jobs (the sync scripts write a last-success timestamp for node_exporter's textfile collector; alert after about 26 hours); dashboards kept in Git.
 4. The mini after the Immich cutover, the overview dashboard over both data sources, the dead-man's switch.
 5. Later: a read-only Telegram bot, logs (Loki), file browsing.
 
 ## Open items
 
-- Flux metrics and the Flux dashboards (a PodMonitor for the Flux controllers).
+- Object-level Flux readiness ("this Kustomization is not Ready") needs a kube-state-metrics custom-resource-state config for Flux; stage 2 alerts on reconcile errors per controller instead. Flux dashboards also come with that.
 - The GPU exporter for the GTX 1650.
 - Where the dead-man's-switch heartbeat goes (healthchecks.io or Uptime Kuma).

@@ -89,8 +89,8 @@ Do not rename the Lima VM or the k3s node (both are called `zion`): local-path v
 
 One Prometheus per cluster, one Grafana on the Lenovo with a data source for each; alerts to Telegram.
 
-- [ ] Stage 1: stack on the Lenovo (written, not yet applied or checked)
-- [ ] Stage 2: SOPS secrets (Grafana admin, Telegram), tailnet access, alert rules (disk, link speed, GPU plugin, Flux, crash loops)
+- [ ] Stage 1: stack on the Lenovo (applied 2026-10-17, HelmRelease Ready, all pods Running; dashboards and Prometheus targets still to be checked)
+- [ ] Stage 2: part A written (alert rules, Flux scraping, Grafana sidecar objects, secret templates); part B waits for the three encrypted secrets (Grafana admin, Tailscale key, Alertmanager/Telegram), then tailnet access and Telegram go live
 - [ ] Stage 3: Immich and backup-job metrics, dashboards in Git
 - [ ] Stage 4: the mini (after the Immich cutover), overview dashboard, dead-man's switch
 - [ ] Later: read-only Telegram bot, logs (Loki), file browsing

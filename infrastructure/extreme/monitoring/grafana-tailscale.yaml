@@ -1,0 +1,71 @@
+# infrastructure/extreme/monitoring/grafana-tailscale.yaml
+# Supporting objects for the Tailscale sidecar in Grafana's pod (same pattern as the Immich and Actual sidecars):
+# the serve config (HTTPS on the tailnet name, proxied to Grafana on 127.0.0.1:3000) and a ServiceAccount that lets
+# the sidecar keep its node identity in the Secret grafana-tailscale-state, so restarts do not create new devices.
+# The sidecar itself and the auth key are wired in the HelmRelease once tailscale-auth.sops.yaml exists (stage 2, part B).
+# Tailnet name: https://grafana-ubuntu-extreme.dove-komodo.ts.net  (pattern <app>-<machine>).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tailscale-serve-config
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: grafana-tailscale
+    app.kubernetes.io/instance: tailscale-serve-config
+    app.kubernetes.io/part-of: zion-lab
+data:
+  serve.json: |
+    {
+      "TCP": { "443": { "HTTPS": true } },
+      "Web": {
+        "${TS_CERT_DOMAIN}:443": {
+          "Handlers": { "/": { "Proxy": "http://127.0.0.1:3000" } }
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: grafana-tailscale
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: grafana-tailscale
+    app.kubernetes.io/instance: grafana-tailscale
+    app.kubernetes.io/part-of: zion-lab
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: grafana-tailscale
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: grafana-tailscale
+    app.kubernetes.io/instance: grafana-tailscale
+    app.kubernetes.io/part-of: zion-lab
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["grafana-tailscale-state"]
+    verbs: ["get", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: grafana-tailscale
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: grafana-tailscale
+    app.kubernetes.io/instance: grafana-tailscale
+    app.kubernetes.io/part-of: zion-lab
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: grafana-tailscale
+subjects:
+  - kind: ServiceAccount
+    name: grafana-tailscale
+    namespace: monitoring
