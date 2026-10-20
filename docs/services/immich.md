@@ -33,7 +33,7 @@ Mini: fresh database dump, maintenance mode, server scaled to 0 (commit), librar
 - The restore took several minutes at the Postgres 1 CPU limit (about 1 GB dump). Earlier attempts "hung" because each retry or page refresh killed the restore before it finished (`terminating connection due to administrator command` in the Postgres log). Watch `kubectl logs deploy/immich-server -c immich-server -f` for `Restore progress`, and click Restore once.
 - The container writes `/srv/immich` as root, so host jobs that read it (the NAS backup) must run as root.
 - The Lenovo was upgraded to v3.3.4 after the restore; the mini stays on v3.2.4, so a newer dump cannot be restored onto the mini until it is upgraded too.
-- Raising the Postgres CPU and memory limits on `extreme` (for example 2 CPU and 3Gi) is a pending follow-up, not applied.
+- After the restore, the Postgres limits on `extreme` were raised from 1 CPU and 1.5Gi to 2 CPU and 3Gi (`apps/extreme/immich/kustomization.yaml`, 2026-10-21; the mini keeps the base values). Applying it restarts Postgres, so Immich is briefly unavailable.
 
 ## Hostnames
 
