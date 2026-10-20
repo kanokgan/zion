@@ -31,3 +31,11 @@ Found while preparing (details in `hosts/ubuntu-extreme/README.md`): k3s started
 - Two host-level `cloudflared` instances (mini, Lenovo) have to be managed outside Flux; their token files are never in Git.
 - CLAUDE.md contexts change from `zion` and `zion-old` to `extreme`, `zion` (mini, until renamed) and `zion-old` (until the wipe).
 - Open: the ingress/DNS/TLS, NAS storage and backup ADRs stay pending; monitoring comes back after the rebuild.
+
+## Update 2026-10-21: outcome
+- **Rebuild:** done 2026-10-17 as described. Actual runs on `extreme` since then.
+- **Immich cutover back to the Lenovo:** done 2026-10-20 to 21 (library copied from the NAS ahead of time plus a delta, database restored from the mini's dump, `immich.kanokgan.com` moved to the `ubuntu-extreme` tunnel). Record and lessons: [docs/services/immich.md](../services/immich.md). The Lenovo was then upgraded to Immich v3.3.4, and its Postgres limits raised to 2 CPU and 3Gi.
+- **Rename of the mini's cluster `zion` to `mini`:** done 2026-10-20 in the order this ADR describes (copy folders, repoint Flux, verify, delete the old folders). The Lima VM and the k3s node keep the name `zion` (ADR 0003).
+- **Deviation from "the mini returns to standby":** the mini keeps running Immich and Actual at 1 replica on purpose, as frozen old copies at their Tailscale names, with no uploads and no backup job. It is not a working standby until a refresh procedure exists (ADR 0004).
+- **Backup gate, as it ended up:** the mini to NAS job was never installed. The NAS copy used for the cutover was made by hand (FreeFileSync, then `rclone check`). The Lenovo's nightly NAS backup (systemd timer, 04:00, runs as root because the library is root-owned) has run clean since 2026-10-21, with a restricted NAS account.
+- **Still open from this ADR:** delete the `home-brain` tunnel and its leftover DNS records in Cloudflare, delete stale Tailscale devices, and the pending ingress, NAS storage and backup ADRs.

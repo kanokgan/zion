@@ -27,3 +27,6 @@ Amended 2026-10-12: originally stated that the VM starts at boot and that no mac
 - The VM disk is a sparse file on the host: it is not a backup. Backups follow the backup ADR.
 - NAS access (SMB on the host vs NFS directly from the VM) is decided in the NAS storage ADR.
 - Images must be arm64-capable (already a convention).
+
+## Update 2026-10-21
+The cluster in this VM is now called `mini` (kubectl context, `clusters/mini/`, `apps/mini/`, since 2026-10-20), but the Lima VM and the k3s node keep the name `zion`: local-path volumes are tied to the node name, so renaming the node would orphan them. Two things learned in operation: the VM must be started by hand after a reboot and login (autostart is still an open item in `hosts/macos-mini/`), and if the external drive is unmounted or remounted while the VM runs, the virtiofs mount goes stale ("Bad file descriptor") and the VM must be restarted. The library on the drive is now a frozen old copy of Immich (ADR 0004).

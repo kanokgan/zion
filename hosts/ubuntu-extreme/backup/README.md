@@ -6,7 +6,8 @@ This is the mirror of `hosts/macos-mini/backup/` (ADR 0009). **Only the machine 
 
 - **One way, never deletes.** Photos deleted in Immich stay on the NAS, and a restore brings them back. Never copy the NAS onto `/srv/immich` except for a deliberate restore.
 - **`--size-only`**, as before: a nightly run over 1.3 TB stays fast. It would miss a file that changed without changing size; the protection against that is the NAS snapshots on `ZionLabs` (hourly).
-- Not in Git by design: the SFTP key and `~/.config/rclone/rclone.conf` (remote `zion-nas`, the same dedicated NAS user as on the mini, access to `ZionLabs` only).
+- Not in Git by design: the SFTP key and `~/.config/rclone/rclone.conf` (remote `zion-nas`, the NAS user `sc-zion`).
+- NAS account `sc-zion` (checked 2026-10-21): not in the `administrators` group, Read/Write on `ZionLabs`, explicit No access on every other share except its `home` (which holds `~/.ssh/authorized_keys`), SFTP only. An SFTP `ls` as that user shows only `ZionLabs` and `home`. Its `authorized_keys` holds only this machine's key (`ubuntu-extreme immich-nas-sync`); the key `immich-library-sync-cronjob` of the wiped cluster was removed on 2026-10-21.
 - No alert yet when a night fails: check the journal until monitoring exists.
 
 ## Setup (once, run by the owner)

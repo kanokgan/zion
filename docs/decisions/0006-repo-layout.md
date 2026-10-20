@@ -30,4 +30,6 @@ Rules:
 - The Lenovo (today `k3s-master`, named before this convention) becomes `ubuntu-extreme` when it is rebuilt; its host setup, if it needs files, goes in `hosts/ubuntu-extreme/`.
 - CLAUDE.md "Repo layout" should point here.
 
+Amended 2026-10-21: the clusters are `extreme` and `mini` (cluster names follow the machine, ADR 0009), not `zion` and `zion-standby`. The folders are `clusters/extreme/`, `clusters/mini/`, `apps/extreme/`, `apps/mini/`, `infrastructure/extreme/`, and `hosts/ubuntu-extreme/` exists. Per-cluster overlays also hold sizing that differs by machine (for example the Postgres limits and the GPU settings on `extreme`).
+
 Amended 2026-10-12: host-level setup moved from `infra/mini/` to `hosts/macos-mini/`. Next to `infrastructure/`, the name `infra/` did not say which one Flux applies, and the folder now follows the machine naming convention.

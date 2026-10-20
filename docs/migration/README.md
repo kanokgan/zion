@@ -67,13 +67,14 @@ Found on `zion-old`, and decided when it was wiped on 2026-10-17:
 
 - [x] Immich cutover to the Lenovo, following the runbook in [docs/services/immich.md](../services/immich.md): database restored 2026-10-20, `immich.kanokgan.com` on the `ubuntu-extreme` tunnel by 2026-10-21; Lenovo upgraded to v3.3.4
 - [x] The Lenovo's nightly backup timer enabled (2026-10-21, first `rclone check` clean: 0 differences over 556,496 files); the mini's job was never installed (`hosts/ubuntu-extreme/backup/`)
-- [ ] NAS user `sc-zion`: remove the old `immich-library-sync-cronjob` key from its `authorized_keys` (left over from the wiped cluster) and take the account out of the `administrators` group (backup user should reach `ZionLabs` only)
+- [x] NAS user `sc-zion` limited to `ZionLabs` and its home, out of the `administrators` group (2026-10-21)
+- [x] NAS user `sc-zion`: the old `immich-library-sync-cronjob` key (left over from the wiped cluster) removed from its `authorized_keys` (2026-10-21)
 - [x] Mini: Immich and Actual are deliberately kept running at 1 replica (decided 2026-10-21): old copies, Tailscale names only, no uploads or data entry there; no backup job runs on the mini. The sidecars are named `actual-macos-mini` and `immich-macos-mini`. Still to define: the mini's standby refresh for Immich
 - [x] Immich on `extreme`: Postgres limits raised to 2 CPU and 3Gi (`apps/extreme/immich/kustomization.yaml`, 2026-10-21)
 - [ ] Immich on `extreme`: clean up untracked files (Administration, Repair) and lower the database backup retention, after the cutover is verified
 - [ ] Cloudflare: delete the tunnel `home-brain` and its leftover DNS records. Tailscale: delete the stale device entries
 - [x] **Rename the mini's cluster `zion` to `mini`** (cluster name = machine nickname, ADR 0009), in the order below. Done 2026-10-20: folders, Flux sync path and kubectl context; the Lima VM and k3s node keep the name `zion`
-- [ ] Docs sweep after the rename: done 2026-10-20 for CLAUDE.md, README, `docs/services/*` and the host README; still open: the naming notes in ADRs 0002 to 0007 and 0009
+- [x] Docs sweep after the rename: done 2026-10-20 for CLAUDE.md, README, `docs/services/*` and the host README; on 2026-10-21 "Update" sections were added to ADRs 0002 to 0007, 0009 and 0010 to match the current state
 - [ ] Later, each its own change: external libraries on the Lenovo (Flux `postBuild.substituteFrom` from a SOPS secret, because their paths hold real names), tighten ufw, make the library PV's declared size realistic (1Ti declared, 1.3 TB real), a read-only Lens credential for both clusters, monitoring and the web-scraper rebuilt in Git (mirrored on the mini), Immich upgrade to v3.3.x after reading the release notes, and the mini's standby refresh procedure (NAS to its NVMe, then the DB restore)
 
 ### Renaming the mini's cluster (`zion` to `mini`), safe order

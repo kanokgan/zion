@@ -1,6 +1,6 @@
 # 0004. Mac mini as a warm standby for Immich
 
-- Status: accepted
+- Status: accepted, amended 2026-10-21 (see "Update 2026-10-21": the standby role is not operational yet)
 - Date: 2026-10-11
 
 ## Context
@@ -22,6 +22,14 @@ Current data path on the Lenovo, verified 2026-10-11:
 
 ## Update 2026-10-17
 The mini took over production early: the Lenovo is being wiped and rebuilt from this repo, which takes more than a day, so `immich.kanokgan.com` moved to the mini's `macos-mini` tunnel (host `cloudflared`, NodePort `30283` forwarded by Lima). The Lenovo's Immich is scaled to 0 and the sync direction is mini to NAS. After the rebuild the roles revert as described here (the Lenovo restores from the NAS and the mini returns to standby). The "public traffic is not wired" line above describes the original design, not the current state.
+
+## Update 2026-10-21
+Immich went back to the Lenovo (cluster `extreme`, restored from the mini's dump on 2026-10-20; `immich.kanokgan.com` moved to the `ubuntu-extreme` tunnel). What this ADR said and what is true now:
+- **Naming:** the mini's cluster is called `mini`, not `zion-standby` (ADR 0009, renamed 2026-10-20). Its Tailscale sidecar is `immich-macos-mini`, not `immich-standby`.
+- **The mini is not a working standby yet.** It runs Immich at 1 replica, on purpose, reachable only at `https://immich-macos-mini.dove-komodo.ts.net`, on the database and library as they were at the cutover. It takes no uploads, and nothing refreshes it. There is no job from the mini to the NAS (the planned mini to NAS `rclone` job was never installed); the Lenovo's nightly job writes the NAS path now ([hosts/ubuntu-extreme/backup/](../../hosts/ubuntu-extreme/backup/README.md)).
+- **Version gap:** the Lenovo runs Immich v3.3.4, the mini v3.2.4. A dump made by the Lenovo cannot be restored onto the older image, so the mini has to be upgraded before it can take a fresh restore.
+- **Still to build before relying on it:** a refresh procedure (NAS to the mini's NVMe in the right direction, then the DB restore on a clean Postgres volume), a decision on public traffic (a `cloudflared` connector already runs on the mini for Plex and Jellyfin, tunnel `macos-mini`), and a tested failover and failback. The failover and failback outline below is unchanged and untested in this direction.
+- The direction of the library sync is reversed relative to the original design: Lenovo to NAS, and only a deliberate restore goes NAS to mini.
 
 ## Failover and failback (outline, to be tested before it is relied on)
 1. Stop Immich on the Lenovo if it is up.

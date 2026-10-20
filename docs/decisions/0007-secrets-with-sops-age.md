@@ -28,3 +28,6 @@ kubectl --context <cluster> create secret generic sops-age \
 - Anyone who can read the `sops-age` Secret in a cluster can decrypt every secret in the repo. Keep cluster access tight.
 - Rotating the key means re-encrypting all `*.sops.yaml` files (`sops updatekeys`) and replacing the Secret in each cluster.
 - Adding a recipient (for example a separate standby key) is a `.sops.yaml` change plus `sops updatekeys`.
+
+## Update 2026-10-21
+The two clusters that decrypt the repo's secrets are `extreme` and `mini` (not `zion` and `zion-standby`); both hold the same `sops-age` Secret in `flux-system`, as decided. Secrets that are not in Git, by design: the Lenovo's SFTP key and `~/.config/rclone/rclone.conf` for the NAS backup (`hosts/ubuntu-extreme/backup/`), the `cloudflared` token files on each host, and the age private key (password manager).

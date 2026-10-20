@@ -19,3 +19,6 @@ Use Flux v2. Each cluster runs its own Flux in the `flux-system` namespace and p
 - Controllers cost a few hundred MiB of RAM per cluster.
 - Changing the cluster means committing and pushing. This includes failover for the standby (ADR 0004), so push access from somewhere other than the Lenovo must be available during an outage.
 - No UI; use `flux get` and `kubectl` to inspect state.
+
+## Update 2026-10-21
+Two clusters now sync from this repo: `extreme` (the Lenovo, reads the public repo over HTTPS, ADR 0009) and `mini` (the Mac mini, SSH deploy key as described above). The mini's Flux was repointed from `clusters/zion` to `clusters/mini` on 2026-10-20 with one `kubectl apply` of `clusters/mini/flux-system/gotk-sync.yaml`, after copying the folders with identical output; nothing was pruned. The `flux` CLI is not installed on the Lenovo, so a sync is forced by annotating the `GitRepository` and `Kustomization` with `reconcile.fluxcd.io/requestedAt`; otherwise Flux syncs on its interval.

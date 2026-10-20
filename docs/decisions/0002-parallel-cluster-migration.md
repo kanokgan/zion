@@ -42,3 +42,6 @@ Build `zion` in parallel from the repo only, and migrate one service at a time w
 
 ## Update 2026-10-17
 `zion-old` was decommissioned early: its Immich and Actual moved to the Mac mini, and the Lenovo was then wiped and rebuilt in place from this repo as the cluster `extreme` ([ADR 0009](0009-rebuild-lenovo-in-place.md)). The soak period was skipped by choice, relying on the NAS copy and its snapshots. Cluster names now follow the machine, so the "`zion` is the new cluster" wording above refers to what is today the mini's cluster.
+
+## Update 2026-10-21
+The mini's cluster was renamed from `zion` to `mini` on 2026-10-20 (ADR 0009), so "`zion`" in this ADR means the cluster that is now called `mini`. Immich went back to the Lenovo on 2026-10-20 to 21. The migration order planned here (Jellyfin, Plex, Actual Budget, Immich) was not followed in the end: Plex and Jellyfin stayed native on the mini (ADR 0008), and Immich and Actual run on the Lenovo's cluster `extreme`.
