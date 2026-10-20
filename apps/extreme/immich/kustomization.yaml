@@ -17,9 +17,9 @@ resources:
 # dump the cutover restores; upgrade afterwards, not during. The CUDA image is the same version with a -cuda suffix.
 images:
   - name: ghcr.io/immich-app/immich-server
-    newTag: v3.2.4
+    newTag: v3.3.4
   - name: ghcr.io/immich-app/immich-machine-learning
-    newTag: v3.2.4-cuda
+    newTag: v3.3.4-cuda
 patches:
   # Set to 1 in the cutover commit (ADR 0009). Before the library was copied and the database restored it was 0: an
   # empty Immich reachable on the tailnet offers first-run admin signup to anyone there, so restore right after start.
