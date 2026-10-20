@@ -1,30 +1,39 @@
 # Immich
 
-Photo library used daily by family. Since 2026-10-17 the Mac mini (`mini`) serves `immich.kanokgan.com` while the Lenovo is rebuilt from this repo as the cluster `extreme` (ADR 0009); moving production back to the Lenovo is the cutover runbook below, and the mini then returns to standby (ADR 0004). The old Lenovo cluster (`zion-old`) was wiped on 2026-10-17, so its library and databases are gone: the NAS and the mini's NVMe hold the data. Immich is the one service that must not go down.
+Photo library used daily by family. Since 2026-10-21 the Lenovo (cluster `extreme`) serves `immich.kanokgan.com` again (database restored 2026-10-20, hostname moved to the `ubuntu-extreme` tunnel; ADR 0009). Between 2026-10-17 and then the Mac mini (`mini`) served it while the Lenovo was rebuilt from this repo. The mini keeps its own old copy, running on purpose at its Tailscale name only (see "What runs where"); it takes no uploads. The old Lenovo cluster (`zion-old`) was wiped on 2026-10-17, so its library and databases are gone: the NAS, the mini's NVMe and the Lenovo's `/srv/immich` hold the data. Immich is the one service that must not go down.
 
 ## What runs where
 
-| | Lenovo (`extreme`, rebuilt 2026-10-17, server held at 0 until the cutover) | Mac mini (`mini`, production since 2026-10-17) |
+| | Lenovo (`extreme`, production since 2026-10-21) | Mac mini (`mini`, old copy since the cutover) |
 |---|---|---|
-| Server | `immich-server:v3.2.4`, one GPU slice (transcoding) | `immich-server:v3.2.4`, 1 replica (also at `https://immich-macos-mini.dove-komodo.ts.net`) |
-| Postgres | `immich/postgres:14-vectorchord0.4.3-pgvectors0.2.0`, 20Gi local-path, empty until the restore | same image, 20Gi local-path, restored from the Lenovo's dump on 2026-10-17 |
+| Server | `immich-server:v3.3.4`, one GPU slice (transcoding) | `immich-server:v3.2.4`, 1 replica, kept running on purpose, at `https://immich-macos-mini.dove-komodo.ts.net` only. **Do not upload there**: it is not synchronised with the Lenovo |
+| Postgres | `immich/postgres:14-vectorchord0.4.3-pgvectors0.2.0`, 20Gi local-path, restored from the mini's dump on 2026-10-20 | same image, 20Gi local-path, holds the database as of the cutover (v3.2.4) |
 | Redis | `redis:6.2-alpine` | same |
-| Machine learning | `immich-machine-learning:v3.2.4-cuda`, 1 replica on a GPU slice | CPU image, **0 replicas, disabled** (no GPU) |
-| Library | `/srv/immich` on the Lenovo's disk (host directory, static PV); being copied from the NAS | external NVMe `HighSpeed2T`, folder `Immich/Backup`, shared into the Lima VM at `/mnt/immich-library` |
-| Public access | tunnel `ubuntu-extreme` (host `cloudflared`); `immich.kanokgan.com` is added at the cutover | `immich.kanokgan.com` via tunnel `macos-mini` (host `cloudflared`), service `http://localhost:30283` -> Lima port forward -> NodePort Service `immich-server-nodeport` (`apps/mini/immich/nodeport.yaml`) |
+| Machine learning | `immich-machine-learning:v3.3.4-cuda`, 1 replica on a GPU slice | CPU image, **0 replicas, disabled** (no GPU) |
+| Library | `/srv/immich` on the Lenovo's disk (host directory, static PV) | external NVMe `HighSpeed2T`, folder `Immich/Backup`, shared into the Lima VM at `/mnt/immich-library`; frozen at the cutover |
+| Public access | `immich.kanokgan.com` via tunnel `ubuntu-extreme` (host `cloudflared`), service `http://localhost:30283` -> NodePort Service (`apps/extreme/immich/nodeport.yaml`) | none (the hostname moved away from tunnel `macos-mini`) |
 
 Manifests: `apps/base/immich/` (shared), `apps/extreme/immich/` and `apps/mini/immich/` (per-cluster overlays: library volume, Tailscale sidecar, NodePort, image tags). Secrets: `apps/*/immich/secret.sops.yaml` (SOPS, ADR 0007).
 
 ## Data and backups
 
 - Photos, thumbnails, encoded video and Immich's own nightly database dump (`backups/`, written about 00:00 Asia/Bangkok) live in the Immich upload folder.
-- The Lenovo's CronJob `immich-library-sync` (04:00, `rclone copy`, never deletes) is no longer the source of truth. **A nightly mini to NAS job (04:00, `rclone copy`, run on the Mac host, not in the cluster) is planned and not built yet**, so new uploads on the mini exist only on its NVMe until it runs.
-- Never run FreeFileSync from the NAS to the NVMe again: it would overwrite the mini's newer uploads. The only direction is mini to NAS.
-- NAS external libraries (four personal drives, `/V11Pro`, `/70Mai`) are not mounted on the standby. Their assets will show as unavailable there.
+- **Nightly Lenovo to NAS job** (since 2026-10-21): a systemd timer at 04:00 runs `rclone copy` (one way, never deletes) from `/srv/immich` to the NAS folder `/ZionLabs/Immich/Backup`, as root with the rclone config of the owner's home. Setup and reasons: [hosts/ubuntu-extreme/backup/](../../hosts/ubuntu-extreme/backup/README.md). First manual run 2026-10-21, then `rclone check` reported 0 differences over 556,496 files. Hourly Synology snapshots on `ZionLabs` protect against a bad copy. No alert yet if a night fails.
+- Only the primary machine writes to that NAS path. The mini's job (`hosts/macos-mini/backup/`) was never installed (its rclone remote was never configured) and must stay off while the mini holds only an old copy.
+- Never copy the NAS onto the mini's NVMe or the Lenovo's `/srv/immich` except as a deliberate restore: it could overwrite newer uploads.
+- NAS external libraries (four personal drives, `/V11Pro`, `/70Mai`) are not mounted on either machine yet. Their assets will show as unavailable.
 
 ## Cutover to the mini (2026-10-17)
 
 Lenovo put in maintenance mode, manual DB dump (`immich-db-backup-20261017T095245-v3.2.4-pg14.19.sql.gz`), library synced Lenovo to NAS to NVMe (FreeFileSync, about 2 hours), mini pinned to v3.2.4 (the Lenovo's version; the mini had been on v3.3.1 and its migrated DB refused v3.2.4, so its Postgres PVC was recreated), dump checked with `gzip -t`, Lenovo server scaled to 0, database restored through Immich's restore flow, `immich.kanokgan.com` moved from tunnel `home-brain` to `macos-mini`. External libraries and machine learning are not available on the mini. Newer Immich versions (v3.3.x) are a separate upgrade, see the runbook below.
+
+## Cutover back to the Lenovo (2026-10-20 to 21)
+
+Mini: fresh database dump, maintenance mode, server scaled to 0 (commit), library copied mini to NAS (FreeFileSync, update mode), `rclone check` clean. Lenovo: delta `rsync` from the NAS into `/srv/immich`, server scaled to 1, database restored through Immich's restore flow from the mini's `immich-db-backup-20261019T221057-v3.2.4-pg14.19.sql.gz`, then `immich.kanokgan.com` moved to the `ubuntu-extreme` tunnel. Lessons:
+- The restore took several minutes at the Postgres 1 CPU limit (about 1 GB dump). Earlier attempts "hung" because each retry or page refresh killed the restore before it finished (`terminating connection due to administrator command` in the Postgres log). Watch `kubectl logs deploy/immich-server -c immich-server -f` for `Restore progress`, and click Restore once.
+- The container writes `/srv/immich` as root, so host jobs that read it (the NAS backup) must run as root.
+- The Lenovo was upgraded to v3.3.4 after the restore; the mini stays on v3.2.4, so a newer dump cannot be restored onto the mini until it is upgraded too.
+- Raising the Postgres CPU and memory limits on `extreme` (for example 2 CPU and 3Gi) is a pending follow-up, not applied.
 
 ## Hostnames
 
@@ -36,9 +45,9 @@ Lenovo put in maintenance mode, manual DB dump (`immich-db-backup-20261017T09524
 
 Pattern: `<app>-<machine>`, the machine names of the naming convention. Actual follows the same pattern.
 
-## Runbook: cutover back to the Lenovo (ADR 0009, draft, to be run by the owner)
+## Runbook: cutover between the two machines (ADR 0009; run once, 2026-10-20 to 21, keep for the next swap)
 
-The Lenovo is rebuilt as the cluster `extreme` (`hosts/ubuntu-extreme/`, `clusters/extreme/`, `apps/extreme/`), its server held at 0 replicas, and the library copied from the NAS into `/srv/immich`. This moves production back. Rollback until the first upload on the Lenovo: move the hostname back to the mini's tunnel and start the mini's server again.
+The Lenovo is the cluster `extreme` (`hosts/ubuntu-extreme/`, `clusters/extreme/`, `apps/extreme/`). This runbook moves production from the mini to the Lenovo and is the template for moving it back. Rollback is possible only until the first upload lands on the new primary: move the hostname back to the old tunnel and start the old server again. After that, the uploads made on the new primary would have to be carried over first. On the Lenovo that window closed on 2026-10-20.
 
 Ready when all of these are true:
 - The library copy to `/srv/immich` finished, and a second pass of the same `rsync` only lists a small delta.
@@ -54,7 +63,7 @@ Cutover (downtime starts at step 1):
 5. Verify before any traffic moves: a recent photo, an old photo, a video, thumbnails; pause the smart search and face queues if ML misbehaves (the GPU should now run them); an upload from the tailnet address lands in `/srv/immich/upload`. Check a transcode job uses the GPU (`nvidia-smi` while it runs). The external libraries are still not mounted.
 6. Cloudflare: move `immich.kanokgan.com` from tunnel `macos-mini` to `ubuntu-extreme` (service `http://localhost:30283`). Test from a phone off Wi-Fi and off Tailscale: log in, scroll, upload.
 7. Lenovo: enable the nightly backup timer (`sudo systemctl enable --now immich-nas-sync.timer`).
-8. Mini: leave the server at 0 (it holds an old database; nothing refreshes it yet). Define the mini's standby refresh (NAS to NVMe, then the DB restore) before relying on it; until then the standby is cold.
+8. Mini: the runbook said to leave the server at 0; at the 2026-10-20 cutover the owner kept it at 1 instead, reachable only at its Tailscale name, as a frozen old copy. It holds an old database and takes no uploads; nothing refreshes it yet. Define the mini's standby refresh (NAS to NVMe, then the DB restore, which needs the mini upgraded to the Lenovo's version) before relying on it as a standby.
 9. Switch `apps.yaml` health checks back (Actual at 1 replica, `wait: true`) after the Actual cutover, update the docs and the tracker, and record the date here.
 
 Verify:

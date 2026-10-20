@@ -11,12 +11,15 @@ This is the mirror of `hosts/macos-mini/backup/` (ADR 0009). **Only the machine 
 
 ## Setup (once, run by the owner)
 
+The job runs as root, because the Immich container writes `/srv/immich` as root and its folders are not readable by other users. Manual runs of rclone against the library therefore need `sudo rclone --config /home/kanokgan/.config/rclone/rclone.conf ...`; the systemd unit sets the same path in `RCLONE_CONFIG`.
+
 ```sh
 sudo apt install -y rclone
-rclone config                                    # remote "zion-nas": sftp, host tnbk.dove-komodo.ts.net, key_file = the NAS user's key
+ssh-keygen -t ed25519 -f ~/.ssh/zion-nas -C "ubuntu-extreme immich-nas-sync" -N ""   # a dedicated key; add the .pub line to the NAS user's ~/.ssh/authorized_keys
+rclone config                                    # remote "zion-nas": sftp, host tnbk.dove-komodo.ts.net, user sc-zion, key_file = /home/kanokgan/.ssh/zion-nas
 rclone lsd zion-nas:/ZionLabs/Immich/Backup      # upload, thumbs, backups ...
 # dry run: only the files changed since the last copy should be listed
-rclone copy /srv/immich zion-nas:/ZionLabs/Immich/Backup --size-only --dry-run -v | tail
+sudo rclone --config /home/kanokgan/.config/rclone/rclone.conf copy /srv/immich zion-nas:/ZionLabs/Immich/Backup --size-only --dry-run -v | tail
 sudo install -m 0755 immich-nas-sync.sh /usr/local/sbin/
 sudo cp immich-nas-sync.service immich-nas-sync.timer /etc/systemd/system/
 sudo systemctl daemon-reload
@@ -29,13 +32,15 @@ sudo systemctl enable --now immich-nas-sync.timer
 ## Verify
 
 ```sh
-rclone check /srv/immich zion-nas:/ZionLabs/Immich/Backup --size-only --one-way \
-  --exclude ".DS_Store" --exclude "@eaDir/**" --exclude "#recycle/**"
+sudo rclone --config /home/kanokgan/.config/rclone/rclone.conf check /srv/immich zion-nas:/ZionLabs/Immich/Backup \
+  --size-only --one-way --exclude "@eaDir/**" --exclude "#recycle/**"
 systemctl list-timers immich-nas-sync.timer
 journalctl -u immich-nas-sync -n 30 --no-pager
 ```
 
-No differences from `rclone check` means the NAS holds everything.
+No differences from `rclone check` means the NAS holds everything. The line `No common hash found - not using a hash for checks` is logged as ERROR but is expected: with `--size-only` between a local disk and SFTP there is no shared checksum.
+
+Status: installed 2026-10-21, first manual run clean, `rclone check` 0 differences over 556,496 files, timer enabled (next run 04:00).
 
 ## Restore
 

@@ -1,7 +1,8 @@
 # apps/mini/immich/kustomization.yaml
-# Mini overlay (ADR 0004): production since 2026-10-17, served at https://immich.kanokgan.com (tunnel macos-mini ->
-# localhost:30283 -> nodeport.yaml) and at https://immich-macos-mini.dove-komodo.ts.net (Tailscale sidecar in the
-# server pod). ML stays at 0. Uploads live on the NVMe: never refresh it from the NAS (the sync goes mini -> NAS only).
+# Mini overlay (ADR 0004): was production 2026-10-17 to 2026-10-20. Since the cutover to the Lenovo it is an old, frozen
+# copy, kept at 1 replica on purpose and reachable only at https://immich-macos-mini.dove-komodo.ts.net (Tailscale
+# sidecar in the server pod); immich.kanokgan.com points at the Lenovo. Do not upload here. ML stays at 0. Never
+# refresh the NVMe from the NAS by accident, and keep the mini to NAS job off while the Lenovo's job writes that path.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
