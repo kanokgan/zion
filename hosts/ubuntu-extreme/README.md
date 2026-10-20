@@ -59,7 +59,7 @@ Gates (checked 2026-10-17): NAS snapshots on `ZionLabs` (hourly, done); the NAS 
 7. Create the `sops-age` secret and bootstrap Flux on `clusters/extreme`.
 8. Install `cloudflared` on the host (`cloudflared/README.md`) with a new tunnel named `ubuntu-extreme` (token file outside Git); the routes `http://localhost:30283` (Immich) and `http://localhost:30506` (Actual) are added at the cutover.
 9. Cutover: the mini in maintenance mode, dump, sync mini to NAS, copy the delta NAS to Lenovo, restore on the Lenovo, move both hostnames to the new tunnel, then repeat for Actual (export and import).
-10. Delete the `home-brain` tunnel and its leftover DNS records, and the stale Tailscale devices.
+10. Delete the `home-brain` tunnel (done 2026-10-21) and check no DNS record still points at it, and delete the stale Tailscale devices (still open).
 
 ## Open items
 

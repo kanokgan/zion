@@ -6,7 +6,7 @@ Things that run directly on macOS, outside the Lima VM and outside Flux (ADR 000
 | What | How installed | Notes |
 |---|---|---|
 | Plex Media Server | app: `/Applications/Plex Media Server.app` | exposed as `plex.kanokgan.com` via the `macos-mini` tunnel, service URL `http://localhost:32400` |
-| Jellyfin | app: `/Applications/Jellyfin.app` | exposed as `jellyfin.kanokgan.com` via the `macos-mini` tunnel, service URL `http://localhost:8096` (the Lenovo's `home-brain` tunnel also has a `jellyfin` route; it is not migrated and goes away when the Lenovo is wiped, so make sure DNS points at `macos-mini`) |
+| Jellyfin | app: `/Applications/Jellyfin.app` | exposed as `jellyfin.kanokgan.com` via the `macos-mini` tunnel, service URL `http://localhost:8096` (the Lenovo's old `home-brain` tunnel, which had a `jellyfin` route, was deleted on 2026-10-21) |
 | cloudflared | Homebrew `cloudflared` (version 2026.9.0 on 2026-10-12) | system LaunchDaemon `/Library/LaunchDaemons/com.cloudflare.cloudflared.plist`, runs `tunnel run --token-file ...`; tunnel `macos-mini`; token file is outside the repo and never committed |
 | Public hostnames (tunnel `macos-mini`) | Cloudflare dashboard | `immich.kanokgan.com` -> `http://localhost:30283` (NodePort Service forwarded by Lima, see `lima/zion.yaml`). `actual.kanokgan.com` is NOT on this tunnel: Actual is served by the Lenovo's tunnel `ubuntu-extreme`, and the mini's copy is a stale standby. Plex and Jellyfin hostnames are on this tunnel too (rows above) |
 | Tailscale | macOS app | device `macos-mini`; `tailscale serve` publishes the k3s API on tailnet port 6443 (Lens) |

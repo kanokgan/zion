@@ -38,4 +38,5 @@ Found while preparing (details in `hosts/ubuntu-extreme/README.md`): k3s started
 - **Rename of the mini's cluster `zion` to `mini`:** done 2026-10-20 in the order this ADR describes (copy folders, repoint Flux, verify, delete the old folders). The Lima VM and the k3s node keep the name `zion` (ADR 0003).
 - **Deviation from "the mini returns to standby":** the mini keeps running Immich and Actual at 1 replica on purpose, as frozen old copies at their Tailscale names, with no uploads and no backup job. It is not a working standby until a refresh procedure exists (ADR 0004).
 - **Backup gate, as it ended up:** the mini to NAS job was never installed. The NAS copy used for the cutover was made by hand (FreeFileSync, then `rclone check`). The Lenovo's nightly NAS backup (systemd timer, 04:00, runs as root because the library is root-owned) has run clean since 2026-10-21, with a restricted NAS account.
-- **Still open from this ADR:** delete the `home-brain` tunnel and its leftover DNS records in Cloudflare, delete stale Tailscale devices, and the pending ingress, NAS storage and backup ADRs.
+- **`home-brain`:** the tunnel was deleted in Cloudflare on 2026-10-21.
+- **Still open from this ADR:** delete stale Tailscale devices, and the pending ingress, NAS storage and backup ADRs.

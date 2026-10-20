@@ -1,6 +1,6 @@
 # 0002. Parallel-cluster migration
 
-- Status: accepted
+- Status: accepted, partly superseded by [ADR 0009](0009-rebuild-lenovo-in-place.md) (see "Update 2026-10-17" and "Update 2026-10-21" at the end)
 - Date: 2026-10-11
 
 ## Context

@@ -57,7 +57,7 @@ Migration order (ADR 0002): Jellyfin, Plex, Actual Budget, Immich. The Immich st
 
 Found on `zion-old`, and decided when it was wiped on 2026-10-17:
 - `monitoring` (kube-prometheus, Grafana, Alertmanager) and `web-scraper` (data 50Gi): dropped, their data discarded. To be rebuilt from Git, properly, and mirrored on the mini.
-- `cloudflare`: the in-cluster `cloudflared` and the tunnel `home-brain` are replaced by `cloudflared` on the host of each machine (tunnels `macos-mini` and `ubuntu-extreme`). The `home-brain` tunnel and its leftover DNS records are still to be deleted in the dashboard. The Lenovo's Jellyfin was not migrated (ADR 0008).
+- `cloudflare`: the in-cluster `cloudflared` and the tunnel `home-brain` are replaced by `cloudflared` on the host of each machine (tunnels `macos-mini` and `ubuntu-extreme`). The `home-brain` tunnel was deleted in the dashboard on 2026-10-21. The Lenovo's Jellyfin was not migrated (ADR 0008).
 
 "unknown" means the live cluster hasn't been fully inspected yet.
 
@@ -72,7 +72,8 @@ Found on `zion-old`, and decided when it was wiped on 2026-10-17:
 - [x] Mini: Immich and Actual are deliberately kept running at 1 replica (decided 2026-10-21): old copies, Tailscale names only, no uploads or data entry there; no backup job runs on the mini. The sidecars are named `actual-macos-mini` and `immich-macos-mini`. Still to define: the mini's standby refresh for Immich
 - [x] Immich on `extreme`: Postgres limits raised to 2 CPU and 3Gi (`apps/extreme/immich/kustomization.yaml`, 2026-10-21)
 - [ ] Immich on `extreme`: clean up untracked files (Administration, Repair) and lower the database backup retention, after the cutover is verified
-- [ ] Cloudflare: delete the tunnel `home-brain` and its leftover DNS records. Tailscale: delete the stale device entries
+- [x] Cloudflare: tunnel `home-brain` deleted (2026-10-21). To confirm: no DNS record still points at it (`jellyfin`, `plex`, `immich`, `actual` hostnames resolve to the `macos-mini` and `ubuntu-extreme` tunnels)
+- [ ] Tailscale: delete the stale device entries
 - [x] **Rename the mini's cluster `zion` to `mini`** (cluster name = machine nickname, ADR 0009), in the order below. Done 2026-10-20: folders, Flux sync path and kubectl context; the Lima VM and k3s node keep the name `zion`
 - [x] Docs sweep after the rename: done 2026-10-20 for CLAUDE.md, README, `docs/services/*` and the host README; on 2026-10-21 "Update" sections were added to ADRs 0002 to 0007, 0009 and 0010 to match the current state
 - [ ] Later, each its own change: external libraries on the Lenovo (Flux `postBuild.substituteFrom` from a SOPS secret, because their paths hold real names), tighten ufw, make the library PV's declared size realistic (1Ti declared, 1.3 TB real), a read-only Lens credential for both clusters, monitoring and the web-scraper rebuilt in Git (mirrored on the mini), Immich upgrade to v3.3.x after reading the release notes, and the mini's standby refresh procedure (NAS to its NVMe, then the DB restore)
