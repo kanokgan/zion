@@ -11,9 +11,9 @@ Photo library used daily by family. Since 2026-10-17 the Mac mini (`zion`) serve
 | Redis | `redis:6.2-alpine` | same |
 | Machine learning | `immich-machine-learning:v3.2.4-cuda`, 1 replica on a GPU slice | CPU image, **0 replicas, disabled** (no GPU) |
 | Library | `/srv/immich` on the Lenovo's disk (host directory, static PV); being copied from the NAS | external NVMe `HighSpeed2T`, folder `Immich/Backup`, shared into the Lima VM at `/mnt/immich-library` |
-| Public access | tunnel `ubuntu-extreme` (host `cloudflared`); `immich.kanokgan.com` is added at the cutover | `immich.kanokgan.com` via tunnel `macos-mini` (host `cloudflared`), service `http://localhost:30283` -> Lima port forward -> NodePort Service `immich-server-nodeport` (`apps/zion/immich/nodeport.yaml`) |
+| Public access | tunnel `ubuntu-extreme` (host `cloudflared`); `immich.kanokgan.com` is added at the cutover | `immich.kanokgan.com` via tunnel `macos-mini` (host `cloudflared`), service `http://localhost:30283` -> Lima port forward -> NodePort Service `immich-server-nodeport` (`apps/mini/immich/nodeport.yaml`) |
 
-Manifests: `apps/base/immich/` (shared), `apps/extreme/immich/` and `apps/zion/immich/` (per-cluster overlays: library volume, Tailscale sidecar, NodePort, image tags). Secrets: `apps/*/immich/secret.sops.yaml` (SOPS, ADR 0007).
+Manifests: `apps/base/immich/` (shared), `apps/extreme/immich/` and `apps/mini/immich/` (per-cluster overlays: library volume, Tailscale sidecar, NodePort, image tags). Secrets: `apps/*/immich/secret.sops.yaml` (SOPS, ADR 0007).
 
 ## Data and backups
 
@@ -47,7 +47,7 @@ Ready when all of these are true:
 - A fresh Actual export is on the NAS, and the family knows uploads pause for a few hours.
 
 Cutover (downtime starts at step 1):
-1. Mini: in the Immich admin UI create a database backup (Administration, Jobs), wait for it, then put Immich in maintenance mode. Scale the mini's server to 0 by committing `replicas: 0` in `apps/zion/immich/kustomization.yaml` (otherwise Flux scales it back). Both mini sidecars are already named `immich-macos-mini` and `actual-macos-mini`.
+1. Mini: in the Immich admin UI create a database backup (Administration, Jobs), wait for it, then put Immich in maintenance mode. Scale the mini's server to 0 by committing `replicas: 0` in `apps/mini/immich/kustomization.yaml` (otherwise Flux scales it back). Both mini sidecars are already named `immich-macos-mini` and `actual-macos-mini`.
 2. Mini: run `hosts/macos-mini/backup/immich-nas-sync.sh` by hand; check its log shows no errors. Then **disable its nightly job** (`sudo launchctl bootout system /Library/LaunchDaemons/com.zionlab.immich-nas-sync.plist`): only one machine may write to that NAS path.
 3. Lenovo: copy the delta, the same command as the first copy (`rsync` from `/mnt/ZionLabs/Immich/Backup/` to `/srv/immich/`). Check the new dump is there: `ls -lt /srv/immich/backups | head -3` and `gzip -t` on it.
 4. Lenovo: commit `replicas: 1` for `immich-server` in `apps/extreme/immich/kustomization.yaml`; wait for the pod (2/2). Open `https://immich-ubuntu-extreme.dove-komodo.ts.net`: the first-run page. Do not create an admin. Restore from the newest `immich-db-backup-*-v3.2.4-pg14.19.sql.gz`, then log in with the existing admin account.
@@ -73,7 +73,7 @@ systemctl list-timers immich-nas-sync.timer
 
 Before: confirm the NVMe is attached, the Lima VM is running, and the copy on the NVMe is as recent as you need.
 
-1. The resting state is 1 replica. If `apps/zion/immich/kustomization.yaml` has the `immich-server` replicas value at `0`, set it to `1`, commit and push.
+1. The resting state is 1 replica. If `apps/mini/immich/kustomization.yaml` has the `immich-server` replicas value at `0`, set it to `1`, commit and push.
 2. `flux reconcile kustomization apps --with-source --context zion`
 3. Wait for `kubectl --context zion get pods -n immich` to show `immich-server` `1/1 Running`.
 4. Open `https://immich-macos-mini.dove-komodo.ts.net` (or `kubectl --context zion port-forward -n immich svc/immich-server 2283:80` and `http://localhost:2283`).
@@ -109,7 +109,7 @@ Not automated. Outline:
 
 Immich releases often and some releases migrate the database, which a revert of the image tag does not undo. So an upgrade is one small commit, preceded by checks.
 
-**Where the version lives:** only in the `images:` block of `apps/zion/immich/kustomization.yaml` (each cluster overlay owns its own). The base manifests have no tag. Server and machine learning get the same tag; change both lines together.
+**Where the version lives:** only in the `images:` block of `apps/mini/immich/kustomization.yaml` (each cluster overlay owns its own). The base manifests have no tag. Server and machine learning get the same tag; change both lines together.
 
 Risk: downtime during the rollout (`Recreate` strategy, plus startup migrations) and a possible one-way database migration. Rollback is a restore from the pre-upgrade dump, not just a revert. Do not upgrade the standby and the Lenovo on the same day: upgrade one, verify, then the other.
 
@@ -119,8 +119,8 @@ Before:
 3. Confirm the new tag exists: `https://github.com/immich-app/immich/pkgs/container/immich-server` (and for `immich-machine-learning`).
 
 Upgrade:
-1. Edit both `newTag` values in `apps/zion/immich/kustomization.yaml`.
-2. Check the render: `kustomize build apps/zion | grep 'image: ghcr.io/immich-app'` shows the new tag on both Immich images.
+1. Edit both `newTag` values in `apps/mini/immich/kustomization.yaml`.
+2. Check the render: `kustomize build apps/mini | grep 'image: ghcr.io/immich-app'` shows the new tag on both Immich images.
 3. Commit (`immich: upgrade to vX.Y.Z`), push, then `flux reconcile kustomization apps --with-source --context zion` to skip the wait.
 
 Verify:

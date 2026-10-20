@@ -12,7 +12,7 @@ Personal budgeting app used daily by family. Since 2026-10-17 production runs on
 | Public | `actual.kanokgan.com` via tunnel `ubuntu-extreme` (`cloudflared` on the host), service `http://localhost:30506` -> NodePort Service `actual-nodeport` (`apps/extreme/actual/nodeport.yaml`) | none: the route moved to the Lenovo's tunnel |
 | Config | env `ACTUAL_SERVER_FILES=/data`, `ACTUAL_PORT=5006`; no secrets other than the Tailscale auth key | same |
 
-The two servers are separate and do not share storage (SQLite over a network share is risky). Manifests: `apps/base/actual/`, `apps/extreme/actual/` and `apps/zion/actual/`. Each overlay has its own `tailscale-auth.sops.yaml`. A Tailscale auth key only has to be valid when the sidecar first joins: afterwards the node's identity lives in the `actual-tailscale-state` Secret, so an expired key does not hurt a running pod. (On 2026-10-17 the Lenovo's copy of the mini's key was no longer valid and the sidecar crash-looped until a new key was encrypted; a sidecar that fails to join keeps the pod unready, so nothing is routed to it.)
+The two servers are separate and do not share storage (SQLite over a network share is risky). Manifests: `apps/base/actual/`, `apps/extreme/actual/` and `apps/mini/actual/`. Each overlay has its own `tailscale-auth.sops.yaml`. A Tailscale auth key only has to be valid when the sidecar first joins: afterwards the node's identity lives in the `actual-tailscale-state` Secret, so an expired key does not hurt a running pod. (On 2026-10-17 the Lenovo's copy of the mini's key was no longer valid and the sidecar crash-looped until a new key was encrypted; a sidecar that fails to join keeps the pod unready, so nothing is routed to it.)
 
 ## Data and backup
 
@@ -37,7 +37,7 @@ Note: importing creates a new budget file ID on the new server. Devices that alr
 
 Actual migrates its data files when a newer version starts, and an older version may refuse to open migrated data. Rolling back means restoring a backup, not just reverting the tag.
 
-**Where the version lives:** only in the `images:` block of `apps/zion/actual/kustomization.yaml`. The base manifest has no tag.
+**Where the version lives:** only in the `images:` block of `apps/mini/actual/kustomization.yaml`. The base manifest has no tag.
 
 Before:
 1. Read the release notes for breaking changes (`https://actualbudget.org/docs/releases`).
@@ -46,8 +46,8 @@ Before:
 4. Until cutover, keep the mini on the same version as the Lenovo unless you are deliberately testing the new one there first.
 
 Upgrade:
-1. Edit `newTag` in `apps/zion/actual/kustomization.yaml`.
-2. Check the render: `kustomize build apps/zion | grep 'image: actualbudget'`.
+1. Edit `newTag` in `apps/mini/actual/kustomization.yaml`.
+2. Check the render: `kustomize build apps/mini | grep 'image: actualbudget'`.
 3. Commit (`actual: upgrade to X.Y.Z`), push, then `flux reconcile kustomization apps --with-source --context zion`.
 
 Verify:
@@ -67,6 +67,6 @@ Rollback: revert the commit if the pod never became healthy. If data was migrate
 
 ## Open items
 
-- Stop the mini's Actual (scale to 0 in `apps/zion/actual/kustomization.yaml`, and rename its sidecar to `actual-macos-mini` in the same commit), so there is one writable copy. Keep its data for a short while, then remove it.
+- Stop the mini's Actual (scale to 0 in `apps/mini/actual/kustomization.yaml`, and rename its sidecar to `actual-macos-mini` in the same commit), so there is one writable copy. Keep its data for a short while, then remove it.
 - Backup is manual export to the NAS. Automating it with a CronJob is optional (backup ADR).
 - Upgrade runbook below still names the mini's overlay in places; the Lenovo's is `apps/extreme/actual/kustomization.yaml`.

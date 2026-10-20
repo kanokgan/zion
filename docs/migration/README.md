@@ -19,7 +19,7 @@ Last updated: 2026-10-17
 ## Phase 1: Platform on `zion` (Mac mini)
 
 - [x] Lima VM + k3s v1.33.6+k3s1 running (`hosts/macos-mini/lima/zion.yaml`, ADR 0003); kubeconfig context `zion`
-- [x] Flux bootstrapped, syncing `clusters/zion/` with a read-only deploy key (ADR 0005)
+- [x] Flux bootstrapped, syncing `clusters/mini/` with a read-only deploy key (ADR 0005)
 - [x] Tailscale access to `zion`: API published on the tailnet at `macos-mini.dove-komodo.ts.net:6443` (`tailscale serve`, tailnet only); Lens connects with a separate kubeconfig (`tls-server-name: localhost`); Immich on the mini at `https://immich-macos-mini.dove-komodo.ts.net` via a Tailscale sidecar
 - [ ] Read-only kubeconfig for Lens (it currently uses the admin credential)
 - [ ] Check the tailnet ACL: devices shared from another account must not reach the mini's port 6443
@@ -52,8 +52,8 @@ Migration order (ADR 0002): Jellyfin, Plex, Actual Budget, Immich. The Immich st
 |---|---|---|---|---|---|---|---|---|---|
 | Jellyfin | yes (config/metadata) | unknown | no | no (native on the mini, ADR 0008; documented in `hosts/macos-mini/`) | the mini's native install; the Lenovo's Jellyfin is dropped, not migrated | n/a (native) | no | no | no |
 | Plex | yes (config 20Gi, transcode 100Gi on the Lenovo) | unknown | no | no (native on the mini, ADR 0008; documented in `hosts/macos-mini/`) | partly (installed as an app on the mini; Lenovo PVCs seen) | n/a (native) | no | no | no |
-| Actual Budget | yes (10Gi PVC `actual-data`, mounted at `/data`) | no: manual export only | export/import into the mini worked, 2026-10-12 (not a restore of an automated backup) | yes (`apps/base/actual`, `apps/zion/actual`) | yes (26.10.0, Tailscale sidecar, no secrets besides the auth key) | yes (`https://actual-macos-mini.dove-komodo.ts.net`) | yes, 2026-10-17 (first to the mini, then back to the rebuilt Lenovo, cluster `extreme`; `actual.kanokgan.com` via tunnel `ubuntu-extreme`) | skipped by choice | yes, on `extreme`; the mini's copy is to be stopped |
-| Immich | yes (library 1Ti, Postgres 20Gi) | partly: nightly Immich DB dump on the NVMe; the mini to NAS nightly rclone job (04:00) is not built yet, so new uploads have one copy until it is | yes, 2026-10-11 (standby on mini, port-forward only; restored from the Oct 11 dump, recent photos verified) | yes (`apps/base/immich`, `apps/zion/immich`) | yes (see ADR 0004) | yes | yes, 2026-10-17 (restored from the Lenovo's dump; `immich.kanokgan.com` on the mini, Lenovo scaled to 0) | skipped by choice | no |
+| Actual Budget | yes (10Gi PVC `actual-data`, mounted at `/data`) | no: manual export only | export/import into the mini worked, 2026-10-12 (not a restore of an automated backup) | yes (`apps/base/actual`, `apps/mini/actual`) | yes (26.10.0, Tailscale sidecar, no secrets besides the auth key) | yes (`https://actual-macos-mini.dove-komodo.ts.net`) | yes, 2026-10-17 (first to the mini, then back to the rebuilt Lenovo, cluster `extreme`; `actual.kanokgan.com` via tunnel `ubuntu-extreme`) | skipped by choice | yes, on `extreme`; the mini's copy is to be stopped |
+| Immich | yes (library 1Ti, Postgres 20Gi) | partly: nightly Immich DB dump on the NVMe; the mini to NAS nightly rclone job (04:00) is not built yet, so new uploads have one copy until it is | yes, 2026-10-11 (standby on mini, port-forward only; restored from the Oct 11 dump, recent photos verified) | yes (`apps/base/immich`, `apps/mini/immich`) | yes (see ADR 0004) | yes | yes, 2026-10-17 (restored from the Lenovo's dump; `immich.kanokgan.com` on the mini, Lenovo scaled to 0) | skipped by choice | no |
 
 Found on `zion-old`, and decided when it was wiped on 2026-10-17:
 - `monitoring` (kube-prometheus, Grafana, Alertmanager) and `web-scraper` (data 50Gi): dropped, their data discarded. To be rebuilt from Git, properly, and mirrored on the mini.

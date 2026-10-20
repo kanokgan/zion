@@ -67,7 +67,7 @@ flowchart LR
 
 ### Mac mini: `zion` (serves Immich until the cutover)
 
-A Lima VM runs k3s, and Flux applies everything in `clusters/zion/` from this repo. Secrets are committed encrypted with SOPS + age and decrypted in the cluster. Plex and Jellyfin run as native macOS apps for hardware transcoding ([ADR 0008](docs/decisions/0008-native-media-servers-on-mini.md)). Their setup is documented in [hosts/macos-mini/](hosts/macos-mini/README.md).
+A Lima VM runs k3s, and Flux applies everything in `clusters/mini/` from this repo. Secrets are committed encrypted with SOPS + age and decrypted in the cluster. Plex and Jellyfin run as native macOS apps for hardware transcoding ([ADR 0008](docs/decisions/0008-native-media-servers-on-mini.md)). Their setup is documented in [hosts/macos-mini/](hosts/macos-mini/README.md).
 
 ```mermaid
 flowchart LR
