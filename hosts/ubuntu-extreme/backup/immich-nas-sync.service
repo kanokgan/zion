@@ -1,6 +1,8 @@
 # hosts/ubuntu-extreme/backup/immich-nas-sync.service
-# Install as /etc/systemd/system/immich-nas-sync.service (the script goes to /usr/local/sbin/). Runs as the owner's
-# user, which holds the rclone config; the library is world-readable. Output goes to the journal:
+# Install as /etc/systemd/system/immich-nas-sync.service (the script goes to /usr/local/sbin/). Runs as root, because
+# the Immich container writes /srv/immich as root and its folders are not readable by other users (found 2026-10-21;
+# opening the library to everyone just for the backup would be worse). The rclone config and the SFTP key stay in the
+# owner's home and are read via RCLONE_CONFIG. Output goes to the journal:
 #   journalctl -u immich-nas-sync -n 30
 [Unit]
 Description=Copy the Immich library to the Synology
@@ -9,7 +11,7 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-User=kanokgan
+Environment=RCLONE_CONFIG=/home/kanokgan/.config/rclone/rclone.conf
 ExecStart=/usr/local/sbin/immich-nas-sync.sh
 Nice=10
 IOSchedulingClass=idle
