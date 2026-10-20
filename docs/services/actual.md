@@ -4,7 +4,7 @@ Personal budgeting app used daily by family. Since 2026-10-17 production runs on
 
 ## What runs where
 
-| | Lenovo (`extreme`, production) | Mac mini (`zion`, previous production, to be stopped) |
+| | Lenovo (`extreme`, production) | Mac mini (`mini`, previous production, to be stopped) |
 |---|---|---|
 | Image | `actualbudget/actual-server:26.10.0` | `actualbudget/actual-server:26.10.0` |
 | Data | 10Gi `local-path` PVC `actual-data`, mounted at `/data` | 10Gi `local-path` PVC `actual-data` on the Lima VM disk |
@@ -48,13 +48,13 @@ Before:
 Upgrade:
 1. Edit `newTag` in `apps/mini/actual/kustomization.yaml`.
 2. Check the render: `kustomize build apps/mini | grep 'image: actualbudget'`.
-3. Commit (`actual: upgrade to X.Y.Z`), push, then `flux reconcile kustomization apps --with-source --context zion`.
+3. Commit (`actual: upgrade to X.Y.Z`), push, then `flux reconcile kustomization apps --with-source --context mini`.
 
 Verify:
 ```sh
-kubectl --context zion rollout status deploy/actual -n actual
-kubectl --context zion logs deploy/actual -n actual --tail=50
-flux get kustomization apps --context zion   # READY True
+kubectl --context mini rollout status deploy/actual -n actual
+kubectl --context mini logs deploy/actual -n actual --tail=50
+flux get kustomization apps --context mini   # READY True
 ```
 Then open the app and check accounts and recent transactions.
 

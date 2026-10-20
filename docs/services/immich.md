@@ -1,10 +1,10 @@
 # Immich
 
-Photo library used daily by family. Since 2026-10-17 the Mac mini (`zion`) serves `immich.kanokgan.com` while the Lenovo is rebuilt from this repo as the cluster `extreme` (ADR 0009); moving production back to the Lenovo is the cutover runbook below, and the mini then returns to standby (ADR 0004). The old Lenovo cluster (`zion-old`) was wiped on 2026-10-17, so its library and databases are gone: the NAS and the mini's NVMe hold the data. Immich is the one service that must not go down.
+Photo library used daily by family. Since 2026-10-17 the Mac mini (`mini`) serves `immich.kanokgan.com` while the Lenovo is rebuilt from this repo as the cluster `extreme` (ADR 0009); moving production back to the Lenovo is the cutover runbook below, and the mini then returns to standby (ADR 0004). The old Lenovo cluster (`zion-old`) was wiped on 2026-10-17, so its library and databases are gone: the NAS and the mini's NVMe hold the data. Immich is the one service that must not go down.
 
 ## What runs where
 
-| | Lenovo (`extreme`, rebuilt 2026-10-17, server held at 0 until the cutover) | Mac mini (`zion`, production since 2026-10-17) |
+| | Lenovo (`extreme`, rebuilt 2026-10-17, server held at 0 until the cutover) | Mac mini (`mini`, production since 2026-10-17) |
 |---|---|---|
 | Server | `immich-server:v3.2.4`, one GPU slice (transcoding) | `immich-server:v3.2.4`, 1 replica (also at `https://immich-macos-mini.dove-komodo.ts.net`) |
 | Postgres | `immich/postgres:14-vectorchord0.4.3-pgvectors0.2.0`, 20Gi local-path, empty until the restore | same image, 20Gi local-path, restored from the Lenovo's dump on 2026-10-17 |
@@ -74,9 +74,9 @@ systemctl list-timers immich-nas-sync.timer
 Before: confirm the NVMe is attached, the Lima VM is running, and the copy on the NVMe is as recent as you need.
 
 1. The resting state is 1 replica. If `apps/mini/immich/kustomization.yaml` has the `immich-server` replicas value at `0`, set it to `1`, commit and push.
-2. `flux reconcile kustomization apps --with-source --context zion`
-3. Wait for `kubectl --context zion get pods -n immich` to show `immich-server` `1/1 Running`.
-4. Open `https://immich-macos-mini.dove-komodo.ts.net` (or `kubectl --context zion port-forward -n immich svc/immich-server 2283:80` and `http://localhost:2283`).
+2. `flux reconcile kustomization apps --with-source --context mini`
+3. Wait for `kubectl --context mini get pods -n immich` to show `immich-server` `1/1 Running`.
+4. Open `https://immich-macos-mini.dove-komodo.ts.net` (or `kubectl --context mini port-forward -n immich svc/immich-server 2283:80` and `http://localhost:2283`).
 5. On an empty database, restore from the newest `immich-db-backup-*-v3.2.4-pg14.19.sql.gz` using Immich's restore from backup.
 6. Log in and check recent photos, an old photo, and thumbnails.
 
@@ -121,14 +121,14 @@ Before:
 Upgrade:
 1. Edit both `newTag` values in `apps/mini/immich/kustomization.yaml`.
 2. Check the render: `kustomize build apps/mini | grep 'image: ghcr.io/immich-app'` shows the new tag on both Immich images.
-3. Commit (`immich: upgrade to vX.Y.Z`), push, then `flux reconcile kustomization apps --with-source --context zion` to skip the wait.
+3. Commit (`immich: upgrade to vX.Y.Z`), push, then `flux reconcile kustomization apps --with-source --context mini` to skip the wait.
 
 Verify:
 ```sh
-kubectl --context zion rollout status deploy/immich-server -n immich
-kubectl --context zion get pods -n immich
-kubectl --context zion logs deploy/immich-server -n immich --tail=50
-flux get kustomization apps --context zion   # READY True
+kubectl --context mini rollout status deploy/immich-server -n immich
+kubectl --context mini get pods -n immich
+kubectl --context mini logs deploy/immich-server -n immich --tail=50
+flux get kustomization apps --context mini   # READY True
 ```
 Then open the app, check the version under the user menu, and open a recent and an old photo.
 

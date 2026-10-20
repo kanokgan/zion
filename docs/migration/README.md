@@ -2,7 +2,7 @@
 
 Rebuilding Zion Lab from the ad hoc setup into a Git-managed, reproducible one. Strategy ([ADR 0002](../decisions/0002-parallel-cluster-migration.md)): build new clusters only from this repo and migrate one service at a time. The legacy cluster `zion-old` (k3s on the Lenovo) was wiped on 2026-10-17 and the Lenovo rebuilt in place as `extreme` ([ADR 0009](../decisions/0009-rebuild-lenovo-in-place.md)); the Mac mini's cluster `zion` carried production in between.
 
-Never two instances writable against the same data. Clusters are named after the machine (`extreme`, later `mini` for today's `zion`), not the role.
+Never two instances writable against the same data. Clusters are named after the machine (`extreme`, `mini`), not the role.
 
 The Mac mini's long-term role is a warm standby for Immich ([ADR 0004](../decisions/0004-mini-as-immich-standby.md)); Immich returns to the Lenovo at its cutover.
 
@@ -14,13 +14,13 @@ Last updated: 2026-10-17
 - [x] Synced to claude.ai
 - [x] Guardrails committed (`.claude/settings.json`, `.claude/hooks/guard-bash.sh`, `.gitignore`)
 - [x] `zion-old` (the cluster this item was for) was wiped on 2026-10-17
-- [ ] Read-only credentials for Lens and Claude Code on `extreme` and `zion` (a ServiceAccount with a read-only role, defined in Git, token created by hand)
+- [ ] Read-only credentials for Lens and Claude Code on `extreme` and `mini` (a ServiceAccount with a read-only role, defined in Git, token created by hand)
 
-## Phase 1: Platform on `zion` (Mac mini)
+## Phase 1: Platform on `mini` (Mac mini, formerly `zion`)
 
-- [x] Lima VM + k3s v1.33.6+k3s1 running (`hosts/macos-mini/lima/zion.yaml`, ADR 0003); kubeconfig context `zion`
+- [x] Lima VM + k3s v1.33.6+k3s1 running (`hosts/macos-mini/lima/zion.yaml`, ADR 0003); kubeconfig context `mini`
 - [x] Flux bootstrapped, syncing `clusters/mini/` with a read-only deploy key (ADR 0005)
-- [x] Tailscale access to `zion`: API published on the tailnet at `macos-mini.dove-komodo.ts.net:6443` (`tailscale serve`, tailnet only); Lens connects with a separate kubeconfig (`tls-server-name: localhost`); Immich on the mini at `https://immich-macos-mini.dove-komodo.ts.net` via a Tailscale sidecar
+- [x] Tailscale access to `mini`: API published on the tailnet at `macos-mini.dove-komodo.ts.net:6443` (`tailscale serve`, tailnet only); Lens connects with a separate kubeconfig (`tls-server-name: localhost`); Immich on the mini at `https://immich-macos-mini.dove-komodo.ts.net` via a Tailscale sidecar
 - [ ] Read-only kubeconfig for Lens (it currently uses the admin credential)
 - [ ] Check the tailnet ACL: devices shared from another account must not reach the mini's port 6443
 - [ ] VM start at boot (blocked by the FileVault decision)
@@ -69,8 +69,8 @@ Found on `zion-old`, and decided when it was wiped on 2026-10-17:
 - [ ] The Lenovo's nightly backup timer enabled and the mini's job disabled; first `rclone check` clean (`hosts/ubuntu-extreme/backup/`)
 - [ ] Mini: stop its Actual and its Immich server (replicas 0) and rename their sidecars to `actual-macos-mini` and `immich-macos-mini` in the same commits (no live pod is restarted by it at that point). Keep the data a few days
 - [ ] Cloudflare: delete the tunnel `home-brain` and its leftover DNS records. Tailscale: delete the stale device entries
-- [ ] **Rename the mini's cluster `zion` to `mini`** (cluster name = machine nickname, ADR 0009), in the order below
-- [ ] Docs sweep after the rename: the naming notes in ADRs 0004, 0006, 0007 and 0009, CLAUDE.md contexts (`extreme`, `mini`), `docs/services/*` (`apps/zion-old/` was already deleted on 2026-10-17)
+- [x] **Rename the mini's cluster `zion` to `mini`** (cluster name = machine nickname, ADR 0009), in the order below. Done 2026-10-20: folders, Flux sync path and kubectl context; the Lima VM and k3s node keep the name `zion`
+- [ ] Docs sweep after the rename: done 2026-10-20 for CLAUDE.md, README, `docs/services/*` and the host README; still open: the naming notes in ADRs 0002 to 0007 and 0009
 - [ ] Later, each its own change: external libraries on the Lenovo (Flux `postBuild.substituteFrom` from a SOPS secret, because their paths hold real names), tighten ufw, make the library PV's declared size realistic (1Ti declared, 1.3 TB real), a read-only Lens credential for both clusters, monitoring and the web-scraper rebuilt in Git (mirrored on the mini), Immich upgrade to v3.3.x after reading the release notes, and the mini's standby refresh procedure (NAS to its NVMe, then the DB restore)
 
 ### Renaming the mini's cluster (`zion` to `mini`), safe order

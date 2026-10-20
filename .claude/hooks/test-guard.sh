@@ -21,7 +21,7 @@ block() { check 2 "$1"; }
 allow() { check 0 "$1"; }
 
 # --- cluster mutations
-block 'kubectl --context zion delete pod x -n y'
+block 'kubectl --context mini delete pod x -n y'
 block 'kubectl --context extreme scale deploy/x --replicas=0'
 block 'kubectl rollout restart deploy/x -n y'
 block 'kubectl apply -f x.yaml'
@@ -77,7 +77,7 @@ block 'git rebase main'
 
 # --- things that must keep working
 allow 'kubectl --context extreme get pods -A'
-allow 'kubectl --context zion describe pod x -n y'
+allow 'kubectl --context mini describe pod x -n y'
 allow 'kubectl --context extreme logs deploy/x -n y --tail=20'
 allow 'kubectl get secret sops-age -n flux-system'
 allow 'kubectl get secrets -A'

@@ -18,7 +18,7 @@ I'm a software engineer, so skip basic programming explanations. Do teach infra,
 
 ## Environment
 - **`extreme`**: the cluster on the Lenovo X1 Extreme2 (host `ubuntu-extreme`), rebuilt ONLY from this repo on 2026-10-17 with the OS kept ([ADR 0009](docs/decisions/0009-rebuild-lenovo-in-place.md)). It replaced the legacy cluster `zion-old`, which was wiped. Actual Budget runs here; Immich moves here at its cutover (runbook in [docs/services/immich.md](docs/services/immich.md)).
-- **`zion`**: the cluster on a Mac mini M2 (ARM64), built ONLY from this repo: k3s in a Lima VM ([ADR 0003](docs/decisions/0003-kubernetes-on-macos.md)). It serves Immich until that cutover, then becomes the warm standby ([ADR 0004](docs/decisions/0004-mini-as-immich-standby.md)). It is to be renamed `mini` after the cutover. Clusters are named after the machine, not the role, because roles swap.
+- **`mini`**: the cluster on a Mac mini M2 (ARM64), built ONLY from this repo: k3s in a Lima VM ([ADR 0003](docs/decisions/0003-kubernetes-on-macos.md)). It serves Immich until that cutover, then becomes the warm standby ([ADR 0004](docs/decisions/0004-mini-as-immich-standby.md)). Renamed from `zion` on 2026-10-20; the Lima VM and the k3s node are still called `zion` (local-path volumes are tied to the node name). Clusters are named after the machine, not the role, because roles swap.
 - Plex and Jellyfin run natively on the mini, outside Kubernetes ([ADR 0008](docs/decisions/0008-native-media-servers-on-mini.md)); host-level setup is in [hosts/macos-mini/](hosts/macos-mini/README.md).
 - Never two instances writable against the same data: a service's old instance is scaled to 0 before the new one takes over, and only one machine writes to a given NAS path.
 - NAS: Synology DS923+. Network: Tailscale; domain kanokgan.com via Cloudflare.
@@ -36,7 +36,7 @@ I'm a software engineer, so skip basic programming explanations. Do teach infra,
 ## Conventions (refine these as we decide)
 - Repo layout: `clusters/<cluster>/` (what Flux syncs), `apps/base/<app>/` (one definition per app), `apps/<cluster>/<app>/` (per-cluster overlays), `infrastructure/` (cluster-wide components), `hosts/<machine>/` (per-machine setup, outside Flux). See [ADR 0006](docs/decisions/0006-repo-layout.md).
 - Machine names: `<os>-<nickname>`, lowercase, e.g. `macos-mini`, `macos-m5`, `ubuntu-extreme`. The same name is used for the `hosts/` folder, the Tailscale device, and the Cloudflare tunnel.
-- Cluster names: the machine's nickname, not its role (`extreme`, `mini`), because roles swap ([ADR 0009](docs/decisions/0009-rebuild-lenovo-in-place.md)). The mini's cluster is still called `zion` until it is renamed.
+- Cluster names: the machine's nickname, not its role (`extreme`, `mini`), because roles swap ([ADR 0009](docs/decisions/0009-rebuild-lenovo-in-place.md)). The mini's cluster was renamed from `zion` on 2026-10-20 (the Lima VM and k3s node keep the name `zion`).
 - Tailscale names of pods (sidecars, tailnet-only, for debugging one specific instance): `<app>-<machine>`, e.g. `immich-ubuntu-extreme`. The production name of a service is its `kanokgan.com` hostname, served by whichever machine is primary.
 - Public access: `cloudflared` runs on the host of each machine, in a tunnel named after the machine, and reaches apps on NodePorts on localhost (Immich 30283, Actual 30506). Hostnames are moved between tunnels in the Cloudflare dashboard at a cutover; one hostname belongs to one tunnel.
 - One writer per data path: a NAS folder is written by one machine at a time, and a service's old instance is scaled to 0 before the new one starts.
@@ -63,7 +63,7 @@ I'm a software engineer, so skip basic programming explanations. Do teach infra,
 
 ## Hard rules for Claude
 - Never mutate a cluster. Only read-only commands (`get`, `describe`, `logs`, `top`, `auth can-i`). Changes happen via commits + GitOps.
-- Always pass `--context` explicitly (`extreme`, or `zion` for the mini's cluster until it is renamed `mini`); never rely on the current context. If a context is not in the kubeconfig of the machine I run on (the Lenovo's kubeconfig is a separate file I cannot read), don't query it: ask me for pasted output.
+- Always pass `--context` explicitly (`extreme` or `mini`); never rely on the current context. If a context is not in the kubeconfig of the machine I run on (the Lenovo's kubeconfig is a separate file I cannot read), don't query it: ask me for pasted output.
 - Never push and never commit. I review, commit and push; you suggest commit messages.
 - Never read, print, or decrypt secrets or keys. Refer to secrets by name only and use placeholders. Reading or copying the ciphertext in `*.sops.yaml` files is fine; plaintext never is.
 - If a paste or a log contains a live token or key (Immich prints maintenance login tokens, Tailscale and Cloudflare tokens), say so, don't repeat it, and recommend rotating it.
@@ -110,7 +110,7 @@ This repo is public on GitHub (since 2026-10-12) as a portfolio. Every file and 
 
 ## Repository contents (current)
 
-- `clusters/extreme/` (the Lenovo) and `clusters/mini/` (the mini, to be renamed `mini`): Flux bootstrap files (`flux-system/`, generated, do not edit) and the Kustomizations (`apps.yaml`, plus `infrastructure.yaml` on `extreme`), which apply the folders below with SOPS decryption.
+- `clusters/extreme/` (the Lenovo) and `clusters/mini/` (the mini): Flux bootstrap files (`flux-system/`, generated, do not edit) and the Kustomizations (`apps.yaml`, plus `infrastructure.yaml` on `extreme`), which apply the folders below with SOPS decryption.
 - `apps/base/`: Immich and Actual Budget. `apps/extreme/` and `apps/mini/`: their per-cluster overlays (library volume, GPU or CPU image, Tailscale sidecars, NodePorts, encrypted secrets).
 - `infrastructure/`: cluster-wide components. Today the NVIDIA device plugin and monitoring (ADR 0010) for the Lenovo (`base/`, `extreme/`, `extreme/monitoring/`); the ingress, storage and backup ADRs are still pending.
 - `hosts/macos-mini/` and `hosts/ubuntu-extreme/`: the host-level setup outside Flux (Lima VM, native apps, k3s install, GPU notes, `cloudflared`, the nightly NAS backup job).

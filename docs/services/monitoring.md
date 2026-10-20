@@ -4,7 +4,7 @@ Prometheus, Grafana and Alertmanager for both clusters, designed in [ADR 0010](.
 
 ## What runs where
 
-| | Lenovo (`extreme`) | Mac mini (`zion`, later `mini`) |
+| | Lenovo (`extreme`) | Mac mini (`mini`) |
 |---|---|---|
 | Stage | 1 (stack running, nothing sensitive, no outside access) | not started: after the Immich cutover |
 | Prometheus | 15 days of data, 25Gi local-path volume | planned: small, 7 days |

@@ -14,7 +14,7 @@ That is what this project is for me. It is the stronghold for my self-hosted lif
 
 ## Architecture
 
-Two machines each run a single-node k3s cluster built from this repo: the Lenovo (cluster `extreme`) and the Mac mini (cluster `zion`, to be renamed `mini`). Clusters are named after the machine, not its role, because roles swap ([ADR 0009](docs/decisions/0009-rebuild-lenovo-in-place.md)). Only one instance of a service is ever writable at once.
+Two machines each run a single-node k3s cluster built from this repo: the Lenovo (cluster `extreme`) and the Mac mini (cluster `mini`). Clusters are named after the machine, not its role, because roles swap ([ADR 0009](docs/decisions/0009-rebuild-lenovo-in-place.md)). Only one instance of a service is ever writable at once.
 
 State on 2026-10-17: the old Lenovo cluster (`zion-old`) was wiped and rebuilt from this repo. Actual Budget runs on the Lenovo. Immich is still served from the Mac mini until its library finishes copying to the Lenovo and the cutover runs ([runbook](docs/services/immich.md)); afterwards the mini becomes the standby ([ADR 0004](docs/decisions/0004-mini-as-immich-standby.md)).
 
@@ -65,7 +65,7 @@ flowchart LR
   bk -.->|SFTP over Tailscale| nas
 ```
 
-### Mac mini: `zion` (serves Immich until the cutover)
+### Mac mini: `mini` (serves Immich until the cutover)
 
 A Lima VM runs k3s, and Flux applies everything in `clusters/mini/` from this repo. Secrets are committed encrypted with SOPS + age and decrypted in the cluster. Plex and Jellyfin run as native macOS apps for hardware transcoding ([ADR 0008](docs/decisions/0008-native-media-servers-on-mini.md)). Their setup is documented in [hosts/macos-mini/](hosts/macos-mini/README.md).
 
@@ -115,7 +115,7 @@ Immich moves to the Lenovo through the cutover runbook, and `immich.kanokgan.com
 
 ## Repo map
 
-- `clusters/<cluster>/`: what Flux syncs, including the Flux install itself (`extreme`, and `zion` for the mini until it is renamed)
+- `clusters/<cluster>/`: what Flux syncs, including the Flux install itself (`extreme` and `mini`)
 - `apps/base/<app>/`: cluster-neutral app definitions
 - `apps/<cluster>/<app>/`: per-cluster overlays (volumes, Tailscale, encrypted secrets)
 - `infrastructure/`: cluster-wide components; today the GPU device plugin for the Lenovo (`base/` and `extreme/`)
