@@ -1,0 +1,22 @@
+# apps/mini/actual/nodeport.yaml
+# Fixed NodePort for Actual on the mini, because the host's cloudflared cannot resolve cluster DNS. Lima forwards
+# guest 30506 to the Mac's 127.0.0.1:30506 (hosts/macos-mini/lima/zion.yaml). No tunnel route points at it today:
+# actual.kanokgan.com is on the Lenovo's tunnel. Kept so a failover only needs a dashboard change.
+apiVersion: v1
+kind: Service
+metadata:
+  name: actual-nodeport
+  namespace: actual
+  labels:
+    app.kubernetes.io/name: actual
+    app.kubernetes.io/instance: actual-nodeport
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: actual
+  ports:
+    - name: http
+      port: 5006
+      targetPort: 5006
+      nodePort: 30506

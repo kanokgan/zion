@@ -1,0 +1,84 @@
+# apps/mini/immich/kustomization.yaml
+# Mini overlay (ADR 0004): production since 2026-10-17, served at https://immich.kanokgan.com (tunnel macos-mini ->
+# localhost:30283 -> nodeport.yaml) and at https://immich-macos-mini.dove-komodo.ts.net (Tailscale sidecar in the
+# server pod). ML stays at 0. Uploads live on the NVMe: never refresh it from the NAS (the sync goes mini -> NAS only).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base/immich
+  - library.yaml
+  - nodeport.yaml
+  - tailscale.yaml
+  - secret.sops.yaml
+  - tailscale-auth.sops.yaml
+# Immich version: the ONE place to edit for an upgrade (runbook: docs/services/immich.md). Server and machine
+# learning must always have the same tag, so change both lines together.
+images:
+  - name: ghcr.io/immich-app/immich-server
+    newTag: v3.2.4
+  - name: ghcr.io/immich-app/immich-machine-learning
+    newTag: v3.2.4
+patches:
+  - target:
+      kind: Deployment
+      name: immich-server
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+      - op: replace
+        path: /spec/template/spec/containers/0/env/1/value
+        value: "false"
+  - target:
+      kind: Deployment
+      name: immich-machine-learning
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+  - target:
+      kind: Deployment
+      name: immich-server
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: immich-server
+      spec:
+        template:
+          spec:
+            serviceAccountName: immich-tailscale
+            containers:
+              - name: tailscale
+                # Deliberate exception to "pin image versions": a networking client that stays backward compatible
+                # and should pick up security fixes. Always pulls on start, so this needs Docker Hub reachable.
+                image: tailscale/tailscale:latest
+                imagePullPolicy: Always
+                env:
+                  - name: TS_AUTHKEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: tailscale-auth
+                        key: TS_AUTHKEY
+                  - name: TS_HOSTNAME
+                    value: immich-macos-mini
+                  - name: TS_KUBE_SECRET
+                    value: immich-tailscale-state
+                  - name: TS_USERSPACE
+                    value: "true"
+                  - name: TS_SERVE_CONFIG
+                    value: /config/serve.json
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 500m
+                    memory: 256Mi
+                volumeMounts:
+                  - name: tailscale-config
+                    mountPath: /config
+            volumes:
+              - name: tailscale-config
+                configMap:
+                  name: tailscale-serve-config
