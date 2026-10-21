@@ -61,10 +61,19 @@ Gates (checked 2026-10-17): NAS snapshots on `ZionLabs` (hourly, done); the NAS 
 9. Cutover: the mini in maintenance mode, dump, sync mini to NAS, copy the delta NAS to Lenovo, restore on the Lenovo, move both hostnames to the new tunnel, then repeat for Actual (export and import).
 10. Delete the `home-brain` tunnel (done 2026-10-21) and check no DNS record still points at it, and delete the stale Tailscale devices (still open).
 
+## Storage plan (decided 2026-10-21)
+
+The root filesystem is one LVM logical volume on a single 2 TB NVMe (`/dev/mapper/ubuntu--vg-ubuntu--lv`). `/srv/immich` is on it: about 1.5 TB used of 1.9 TB (82%) on 2026-10-21, mostly `library` (1.1 TB of originals), plus `encoded-video` (191 GB), `backups` (69 GB, DB dumps) and `thumbs` (52 GB).
+- **Headroom:** about six months at the current growth, after the cleanups listed in the tracker (dashcam transcodes, untracked files, lower DB dump retention). Revisit around April 2027, or earlier when the disk reaches about 90% (the monitoring alert fires at 80%, ADR 0010).
+- **Plan: add a second 2 TB NVMe and extend the volume** (add it to the volume group, grow the logical volume and the filesystem online; no reinstall, no change to `/srv/immich` or the manifests). The machine has two M.2 slots; installing the disk needs someone at the machine and a shutdown, so Immich is down while it is open.
+- **Accepted risk:** the filesystem then spans two disks, so losing either NVMe loses the whole filesystem (OS, k3s state, Postgres, library). The mitigation is the nightly copy of `/srv/immich` to the NAS (`backup/`) and rebuilding from this repo. The alternative that keeps the failure domains separate (the new disk mounted only at `/srv/immich/library`, a one-time copy of about 1.1 TB) was considered and not chosen.
+- **Considered and deferred:** moving the originals (`library`, `upload`) to the NAS and keeping only thumbnails and transcodes on the NVMe. It makes the NAS the only good copy of the photos, so it needs a second copy of the originals elsewhere and an ADR on the NAS storage pattern first.
+- Before opening the machine: check the last nightly sync was clean (`journalctl -u immich-nas-sync`), paste `lsblk -f` before formatting anything, and extend with `pvcreate`, `vgextend`, `lvextend -r` after checking the device name.
+
 ## Open items
 
 - Contents of `/root/scripts/k3s-disaster-backup.sh` and where its output goes.
 - ufw: tighten after the rebuild (see the table).
 - Untested: `k3s-install.sh`, the apt exclusion file, `cloudflared/` (unit and README), `fstab.example`. All written, none run yet.
 - `flux bootstrap` for `clusters/extreme/` (adds `flux-system/` beside the two Kustomizations already there).
-- External libraries (the personal drives, `/V11Pro`, `/70Mai`) are not mounted in `apps/extreme/immich`: their paths contain real names, so they need Flux `postBuild.substituteFrom` from a SOPS secret, or they stay unavailable.
+- External libraries: the family NAS drives and `IPCamera` are mounted read-only into the Immich server (`apps/extreme/immich/kustomization.yaml`, 2026-10-21), using the host's existing CIFS mounts. Real share names are in Git by the owner's decision, so no Flux substitution was needed. `/mnt/IPCamera` needed its own `fstab` line (the old one was a commented-out dead share).

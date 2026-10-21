@@ -72,6 +72,7 @@ Found on `zion-old`, and decided when it was wiped on 2026-10-17:
 - [x] Mini: Immich and Actual are deliberately kept running at 1 replica (decided 2026-10-21): old copies, Tailscale names only, no uploads or data entry there; no backup job runs on the mini. The sidecars are named `actual-macos-mini` and `immich-macos-mini`. Still to define: the mini's standby refresh for Immich
 - [x] Immich on `extreme`: Postgres limits raised to 2 CPU and 3Gi (`apps/extreme/immich/kustomization.yaml`, 2026-10-21)
 - [ ] Immich on `extreme`: clean up untracked files (Administration, Repair) and lower the database backup retention, after the cutover is verified
+- [ ] Storage: the Lenovo's disk is at about 82%. Plan (2026-10-21): about six months of headroom after the cleanups, then a second 2 TB NVMe and an online LVM extend (`hosts/ubuntu-extreme/README.md`, "Storage plan"). Revisit around April 2027 or at 90%. Moving originals to the NAS is deferred until a second copy of them and an ADR on the NAS storage pattern exist
 - [x] Cloudflare: tunnel `home-brain` deleted (2026-10-21). To confirm: no DNS record still points at it (`jellyfin`, `plex`, `immich`, `actual` hostnames resolve to the `macos-mini` and `ubuntu-extreme` tunnels)
 - [ ] Tailscale: delete the stale device entries
 - [x] **Rename the mini's cluster `zion` to `mini`** (cluster name = machine nickname, ADR 0009), in the order below. Done 2026-10-20: folders, Flux sync path and kubectl context; the Lima VM and k3s node keep the name `zion`
