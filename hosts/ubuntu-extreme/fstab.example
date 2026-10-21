@@ -12,3 +12,10 @@
 //<NAS_ADDRESS>/temp             /mnt/temp              cifs   credentials=/root/.smbcredentials,uid=999,gid=999,_netdev,nofail,x-systemd.mount-timeout=30,cache=loose,actimeo=30,rsize=130048,wsize=130048,vers=3.1.1 0 0
 # ZionLabs is reached over the tailnet with its own credentials file:
 //<NAS_TAILSCALE_NAME>/ZionLabs  /mnt/ZionLabs          cifs   credentials=/root/.smbcredentials-tnbk,uid=1000,gid=1000,_netdev,nofail,x-systemd.mount-timeout=30,cache=loose,actimeo=30,rsize=130048,wsize=130048,vers=3.1.1 0 0
+#
+# External libraries for Immich: a read-only bind mount of one NAS folder at a neutral path, so the manifests
+# (apps/extreme/immich/kustomization.yaml) never hold real share or folder names. The CIFS mounts above are
+# writable; `ro` here keeps Immich from ever changing the originals. Create the target first
+# (`sudo mkdir -p /srv/external/camera-uploads`), then `sudo systemctl daemon-reload && sudo mount /srv/external/camera-uploads`.
+# Check that it is read-only: `touch /srv/external/camera-uploads/x` must fail.
+/mnt/<Share>/<Folder>            /srv/external/camera-uploads  none  bind,ro,nofail,x-systemd.requires-mounts-for=/mnt/<Share>  0 0

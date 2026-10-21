@@ -41,7 +41,7 @@ journalctl -u immich-nas-sync -n 30 --no-pager
 
 No differences from `rclone check` means the NAS holds everything. The line `No common hash found - not using a hash for checks` is logged as ERROR but is expected: with `--size-only` between a local disk and SFTP there is no shared checksum.
 
-Status: installed 2026-10-21, first manual run clean, `rclone check` 0 differences over 556,496 files, timer enabled (next run 04:00).
+Status: installed 2026-10-21, first manual run clean, `rclone check` 0 differences over 556,496 files, timer enabled. The first scheduled run (2026-10-21 04:00 to 04:03) succeeded unattended, with the restricted NAS account.
 
 ## Restore
 
