@@ -97,8 +97,8 @@ I'm a software engineer, so skip basic programming explanations. Do teach infra,
 
 ## Public repository
 This repo is public on GitHub (since 2026-10-12) as a portfolio. Every file and every commit is world-readable, and history cannot be un-published.
-- Never commit: plaintext secrets, tokens, private keys, kubeconfigs, LAN IPs, or real names of family members. Use placeholders (`Member1Drive`, "family").
-- Fine to commit: the tailnet domain (`dove-komodo.ts.net`), public hostnames on kanokgan.com, the age public key, SOPS-encrypted `*.sops.yaml` files.
+- Never commit: plaintext secrets, tokens, private keys, kubeconfigs, LAN IPs, or personal details of family members beyond the NAS share names below. Use placeholders (`Member1Drive`, "family") elsewhere.
+- Fine to commit: the tailnet domain (`dove-komodo.ts.net`), public hostnames on kanokgan.com, the age public key, SOPS-encrypted `*.sops.yaml` files, and the NAS share names that carry a first name (`ChurinDrive`, `JongdeeDrive`, `KanokganDrive`, `OrawanDrive`), because the owner decided on 2026-10-21 to put exact mount paths in Git (the external libraries in `apps/extreme/immich/`). If these names are in the gitignored `.denylist`, remove them there or the pre-commit check will block the commit. This does not extend to photo content, folder contents, or other personal data.
 - Guardrails: `.pre-commit-config.yaml` runs gitleaks and `script/check-denylist.sh` (private terms in the gitignored `.denylist`; Claude never reads it). `.github/workflows/secret-scan.yaml` scans full history on push and PR.
 - If a secret reaches GitHub, assume it is compromised: rotate it first, then remove it.
 - Docs are read by recruiters: keep them accurate and in sync with the manifests.

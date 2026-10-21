@@ -128,6 +128,66 @@ patches:
                 hostPath:
                   path: /srv/external/camera-uploads
                   type: Directory
+  # The family's NAS drives, read-only, for external libraries: the CIFS mounts already on the host (/etc/fstab, see
+  # hosts/ubuntu-extreme/README.md) shown to Immich at the same path. The NAS account used for the mounts has READ
+  # access only, and the pod mounts are readOnly as well. Real share names are in Git on purpose (owner's decision,
+  # 2026-10-21). Do not import a folder twice: CameraUploads is inside KanokganDrive and also mounted at /CameraUpload.
+  # If an existing library in the restored database uses other import paths, change the mountPath here to match.
+  - target:
+      kind: Deployment
+      name: immich-server
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: immich-server
+      spec:
+        template:
+          spec:
+            containers:
+              - name: immich-server
+                volumeMounts:
+                  - name: nas-churindrive
+                    mountPath: /mnt/ChurinDrive
+                    readOnly: true
+                    mountPropagation: HostToContainer
+                  - name: nas-jongdeedrive
+                    mountPath: /mnt/JongdeeDrive
+                    readOnly: true
+                    mountPropagation: HostToContainer
+                  - name: nas-kanokgandrive
+                    mountPath: /mnt/KanokganDrive
+                    readOnly: true
+                    mountPropagation: HostToContainer
+                  - name: nas-orawandrive
+                    mountPath: /mnt/OrawanDrive
+                    readOnly: true
+                    mountPropagation: HostToContainer
+                  - name: nas-ipcamera
+                    mountPath: /mnt/IPCamera
+                    readOnly: true
+                    mountPropagation: HostToContainer
+            volumes:
+              - name: nas-churindrive
+                hostPath:
+                  path: /mnt/ChurinDrive
+                  type: Directory
+              - name: nas-jongdeedrive
+                hostPath:
+                  path: /mnt/JongdeeDrive
+                  type: Directory
+              - name: nas-kanokgandrive
+                hostPath:
+                  path: /mnt/KanokganDrive
+                  type: Directory
+              - name: nas-orawandrive
+                hostPath:
+                  path: /mnt/OrawanDrive
+                  type: Directory
+              - name: nas-ipcamera
+                hostPath:
+                  path: /mnt/IPCamera
+                  type: Directory
   - target:
       kind: Deployment
       name: immich-server
