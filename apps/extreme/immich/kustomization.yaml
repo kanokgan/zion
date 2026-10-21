@@ -100,7 +100,8 @@ patches:
                     memory: 3Gi
   # External libraries from the NAS, read-only: a NAS folder bind-mounted on the host at /srv/external/camera-uploads
   # (fstab pattern in hosts/ubuntu-extreme/fstab.example; the real share and folder names stay out of Git) and shown
-  # to Immich at /external/camera-uploads. Libraries are created in the Immich UI, one import path per subfolder.
+  # to Immich at /CameraUpload. Libraries are created in the Immich UI, one import path per subfolder, for example
+  # /CameraUpload/<SubFolder>; the import path is checked inside the container, so it must start with this mount path.
   # type: Directory, so a missing host path stops the pod loudly. HostToContainer, so a mount that comes up after
   # k3s still becomes visible. If the NAS is down, the folder is empty and a scan marks the assets offline until the
   # files are back.
@@ -119,7 +120,7 @@ patches:
               - name: immich-server
                 volumeMounts:
                   - name: external-camera-uploads
-                    mountPath: /external/camera-uploads
+                    mountPath: /CameraUpload
                     readOnly: true
                     mountPropagation: HostToContainer
             volumes:
