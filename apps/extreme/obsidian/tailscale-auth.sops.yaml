@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: tailscale-auth
+    namespace: obsidian
+stringData:
+    TS_AUTHKEY: ENC[AES256_GCM,data:8dTlHwDpHaPlrAqrUdK+XmbGYkk4c5Uo5EguNjkZXw1y9H3vGA9OLrC8/yOglvka5RlfWhW4deHGoS5WDn8=,iv:PItMxjisQQSlYXxaKugqI42gCliXP5eofixWMXvZKzI=,tag:izTQMN/b4YFIyMmtbkM7Nw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBIU3ErRDI0d01qODgvWERi
+            YVBvMWE2czFYWC8wRzRmMDV2SWdQUzdHU1RBCm9tUE5NNzIyc3J1ZkpHVVNTY1Bz
+            WWtDZjFBMWNJRXJFQUtCaHcrc2JIRFkKLS0tIFV5WkJFRmFwVE51Y3hIUzEza041
+            YXAwaDE0NC95cVZNY1h5bEluZmtqSUEKxL8ZahyAcWGNx2weL3sdbyAhJpdcI3kq
+            gslO1OxcaKk1ZsuQv04ufGeVgkbipKQ5qTZojRjRKGYEXDuYlfCv4Q==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1v4nsu2yecf96sega4h32sznnurqwdngurhu3vkxmu2v7vr67zc8seq5nqn
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-25T14:43:48Z"
+    mac: ENC[AES256_GCM,data:s4RGUBVbTM0BgOrKQL8gLObVlR4IdKJzsDBtQC9V0sCgNDNz3ZNw0pixpQyxr5i4bD0jyF9ZDkKZJbCD0D5s5DeWAYvNiqyDx3+jukQhqbxrGDWz2fj4324SlGSptZXdsEPWbkENErPpHPUe169pqGwFaJiEHOUKpj6regahcfs=,iv:eYBn6Ybz+gW/oh8fkr9qkhCKjzMmz4JUu7IX0ePZBA8=,tag:EJ+/1Dvds/BpV/yZF9+ZgQ==,type:str]
+    version: 3.13.3

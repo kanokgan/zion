@@ -1,0 +1,110 @@
+# apps/base/obsidian/obsidian.yaml
+# The real Obsidian desktop app, streamed to the browser (linuxserver image, Selkies). Used from the work laptop,
+# where installing Obsidian is blocked. Phase 1 (trial): it runs on a COPY of the vault; the volume `data` is
+# defined in the overlay.
+#
+# SECURITY: the web page includes a terminal with passwordless sudo, so anyone who reaches it is root inside the
+# container and can read and change the whole vault. The built-in basic auth (CUSTOM_USER / PASSWORD) is only a
+# second layer: the public hostname must be behind Cloudflare Access (docs/services/obsidian.md).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obsidian
+  namespace: obsidian
+  labels:
+    app.kubernetes.io/name: obsidian
+    app.kubernetes.io/instance: obsidian
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: obsidian
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: obsidian
+        app.kubernetes.io/instance: obsidian
+        app.kubernetes.io/part-of: zion-lab
+    spec:
+      containers:
+        - name: obsidian
+          # Tag pinned per cluster in the overlay's `images:` block (upgrade runbook: docs/services/obsidian.md).
+          image: lscr.io/linuxserver/obsidian
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: Asia/Bangkok
+            # The Lenovo has an NVIDIA GPU but none is passed to this pod: do not probe for one.
+            - name: AUTO_GPU
+              value: "false"
+            - name: CUSTOM_USER
+              valueFrom:
+                secretKeyRef:
+                  name: obsidian-auth
+                  key: CUSTOM_USER
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: obsidian-auth
+                  key: PASSWORD
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 3Gi
+          volumeMounts:
+            # /config is the container user's home (Obsidian settings); /vault is where the vault is opened from.
+            - name: data
+              mountPath: /config
+              subPath: config
+            - name: data
+              mountPath: /vault
+              subPath: vault
+            # Electron needs a large /dev/shm.
+            - name: shm
+              mountPath: /dev/shm
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: obsidian-data
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: obsidian
+  namespace: obsidian
+  labels:
+    app.kubernetes.io/name: obsidian
+    app.kubernetes.io/instance: obsidian
+spec:
+  selector:
+    app.kubernetes.io/name: obsidian
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000

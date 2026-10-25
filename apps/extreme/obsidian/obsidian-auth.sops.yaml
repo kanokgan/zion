@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: obsidian-auth
+    namespace: obsidian
+stringData:
+    CUSTOM_USER: ENC[AES256_GCM,data:hqb0mspbH58j17PCdqE5xQ==,iv:VqvXw9sOAhP0wZ9wLu/2c5pHdCfatJ5UbMJmoqYCuDY=,tag:kbZD0xlma8X8qcxbIui1UA==,type:str]
+    PASSWORD: ENC[AES256_GCM,data:ZMtqYTWRTfePIqegKMcLQd0IEg==,iv:/9hniJJx0lszKb91G2BsqDbDmrrWrUWlRzTLvCMXIPw=,tag:gMIGVUbQMPxTqfUa9Fw40A==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA5SUdQZlpUMWRFZm5tL2Y2
+            UTZjKzI3U1ZUMXliUnNwazhWTzhiaDNwS0RRCmlONUQyRSt5UEFBQlhPVXdid0hs
+            SGtpRVlsQk8yQWVmRVlidndUZkZGMEkKLS0tIENSZ3kvWjNVSlUwV3dmeHdqYnM4
+            cG0yVTVYT1NuWkcxU0s5NHZFL2RTdFUKQ/CXfb/2JmIR+h85aOH1tGjz4Nj7FI0l
+            vN/c6sSKtZTdeSYnK4Up7P9uh59+If8IvZgEYDntKL3cCQ2O40d3fw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1v4nsu2yecf96sega4h32sznnurqwdngurhu3vkxmu2v7vr67zc8seq5nqn
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-25T14:43:48Z"
+    mac: ENC[AES256_GCM,data:aDPTQzQj1gQDW2SxbsZz2fj4YqfuEyu3HEJhoQ05St8jvhyxyt2YKJs7ntFdzgD2J1YVOFjabPmG8Ymu0sgEz4u/9kr8O+6yv6Soi1yzmg4ujIJJOLZOai52528YLa5KNjIntQJrU4unIRa44nJP9/N2zkmzqyvDQSCbLdOGtBU=,iv:F46kckEuS35GRDbRkFf1jVCVWBNFeosE+3LdHbAn8dw=,tag:KZXm/9lTrOiZW4XDQmq3zw==,type:str]
+    version: 3.13.3

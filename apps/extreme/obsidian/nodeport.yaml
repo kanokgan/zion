@@ -1,0 +1,22 @@
+# apps/extreme/obsidian/nodeport.yaml
+# Public path for obsidian.kanokgan.com on the Lenovo: the host's cloudflared (tunnel ubuntu-extreme) cannot resolve
+# cluster DNS, so Obsidian is also reachable on a fixed NodePort, here on the host's localhost:30320. The tunnel
+# route points at http://localhost:30320 and the hostname must be behind Cloudflare Access.
+apiVersion: v1
+kind: Service
+metadata:
+  name: obsidian-nodeport
+  namespace: obsidian
+  labels:
+    app.kubernetes.io/name: obsidian
+    app.kubernetes.io/instance: obsidian-nodeport
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: obsidian
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      nodePort: 30320

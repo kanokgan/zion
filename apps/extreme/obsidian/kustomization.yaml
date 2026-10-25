@@ -1,0 +1,65 @@
+# apps/extreme/obsidian/kustomization.yaml
+# Obsidian in the browser on the Lenovo (cluster `extreme`), phase 1: a trial on a COPY of the vault. Served at
+# https://obsidian.kanokgan.com (host cloudflared, tunnel ubuntu-extreme -> localhost:30320 -> nodeport.yaml, behind
+# Cloudflare Access) and, for debugging, at https://obsidian-ubuntu-extreme.dove-komodo.ts.net (Tailscale sidecar,
+# tailnet only). Built-in login is basic auth from obsidian-auth.sops.yaml. No mini standby.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base/obsidian
+  - data.yaml
+  - nodeport.yaml
+  - tailscale.yaml
+  - tailscale-auth.sops.yaml
+  - obsidian-auth.sops.yaml
+# Obsidian image version: the ONE place to edit for an upgrade (runbook: docs/services/obsidian.md).
+images:
+  - name: lscr.io/linuxserver/obsidian
+    newTag: 1.14.4
+patches:
+  - target:
+      kind: Deployment
+      name: obsidian
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: obsidian
+      spec:
+        template:
+          spec:
+            serviceAccountName: obsidian-tailscale
+            containers:
+              - name: tailscale
+                # Deliberate exception to "pin image versions" (same as the other apps): a backward-compatible
+                # networking client that should pick up security fixes.
+                image: tailscale/tailscale:latest
+                imagePullPolicy: Always
+                env:
+                  - name: TS_AUTHKEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: tailscale-auth
+                        key: TS_AUTHKEY
+                  - name: TS_HOSTNAME
+                    value: obsidian-ubuntu-extreme
+                  - name: TS_KUBE_SECRET
+                    value: obsidian-tailscale-state
+                  - name: TS_USERSPACE
+                    value: "true"
+                  - name: TS_SERVE_CONFIG
+                    value: /config/serve.json
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 500m
+                    memory: 256Mi
+                volumeMounts:
+                  - name: tailscale-config
+                    mountPath: /config
+            volumes:
+              - name: tailscale-config
+                configMap:
+                  name: tailscale-config

@@ -1,0 +1,42 @@
+# apps/extreme/obsidian/data.yaml
+# Phase 1 (trial): the host directory /srv/obsidian on the Lenovo's NVMe, outside /var/lib/rancher so that removing
+# k3s never touches it. Subfolders: config/ (Obsidian's settings) and vault/ (a COPY of the vault; the original on
+# the NAS is only read). Bound statically to obsidian-data; Retain so deleting the claim never touches the files.
+# Create the directories first (docs/services/obsidian.md). The capacity is a label, not a quota.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: obsidian-data-pv
+  labels:
+    app.kubernetes.io/name: obsidian
+    app.kubernetes.io/instance: obsidian-data-pv
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  capacity:
+    storage: 30Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: obsidian
+    name: obsidian-data
+  hostPath:
+    path: /srv/obsidian
+    type: Directory
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: obsidian-data
+  namespace: obsidian
+  labels:
+    app.kubernetes.io/name: obsidian
+    app.kubernetes.io/instance: obsidian-data
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: obsidian-data-pv
+  resources:
+    requests:
+      storage: 30Gi
