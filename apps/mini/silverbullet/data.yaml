@@ -1,0 +1,19 @@
+# apps/mini/silverbullet/data.yaml
+# The standby's notes: a local-path volume on the Lima VM disk. It is a separate copy, never shared with the Lenovo
+# (one writer per data path). It starts empty and is refreshed from the NAS backup by hand
+# (docs/services/silverbullet.md, "Refresh the mini"). local-path does not enforce the size.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: silverbullet-data
+  namespace: silverbullet
+  labels:
+    app.kubernetes.io/name: silverbullet
+    app.kubernetes.io/instance: silverbullet-data
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 20Gi

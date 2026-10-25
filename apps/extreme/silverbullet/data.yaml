@@ -1,0 +1,43 @@
+# apps/extreme/silverbullet/data.yaml
+# The notes: the host directory /srv/silverbullet on the Lenovo's NVMe, deliberately outside /var/lib/rancher so that
+# removing or reinstalling k3s never touches it (same pattern as Immich's library). Bound statically to
+# silverbullet-data; Retain so deleting the claim never touches the files. Create the directory before the first
+# start (docs/services/silverbullet.md). hostPath ignores the capacity: it is a declared size, not a quota, so watch
+# `df -h /srv` as the space fills with PDFs and spreadsheets.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: silverbullet-data-pv
+  labels:
+    app.kubernetes.io/name: silverbullet
+    app.kubernetes.io/instance: silverbullet-data-pv
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: silverbullet
+    name: silverbullet-data
+  hostPath:
+    path: /srv/silverbullet
+    type: Directory
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: silverbullet-data
+  namespace: silverbullet
+  labels:
+    app.kubernetes.io/name: silverbullet
+    app.kubernetes.io/instance: silverbullet-data
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: silverbullet-data-pv
+  resources:
+    requests:
+      storage: 100Gi

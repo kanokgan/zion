@@ -1,0 +1,22 @@
+# apps/extreme/silverbullet/nodeport.yaml
+# Public path for silverbullet.kanokgan.com on the Lenovo: the host's cloudflared (tunnel ubuntu-extreme) cannot
+# resolve cluster DNS, so SilverBullet is also reachable on a fixed NodePort, here on the host's localhost:30300.
+# The tunnel route points at http://localhost:30300 (same port as on the mini).
+apiVersion: v1
+kind: Service
+metadata:
+  name: silverbullet-nodeport
+  namespace: silverbullet
+  labels:
+    app.kubernetes.io/name: silverbullet
+    app.kubernetes.io/instance: silverbullet-nodeport
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: silverbullet
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      nodePort: 30300

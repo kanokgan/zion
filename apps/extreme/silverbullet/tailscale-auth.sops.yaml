@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: tailscale-auth
+    namespace: silverbullet
+stringData:
+    TS_AUTHKEY: ENC[AES256_GCM,data:5KlulKmqjuAhqKXHOTsnsEpFUiTJStwCm50nAGMcO3m5fxMfFyOr356MA5xQypk5b/bu5/Htg95JidEABw==,iv:T2+19G7kDCyAIXcN/Zv5klH220+YyEWF25UboFdNlxA=,tag:idhY5xxVNsin5ZwOG5O1jw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAxK25wVEUyQzkyS0RuWjVt
+            dkVpcnNRaXdUN3lCRCtlRUM1dGRGS1VIdjBNCkpvU2kwM0tCMVArdjNhWU5DcExl
+            RktodXdpVDN0L0kxQ2loK3B1UFVYcncKLS0tIDFSY3BhREU1b0dEOHFtWG5Ja2dF
+            VzhZYk5nV3NvZ1Y4VVpOMHhvVWZ5U0kKgnGdUzLwXVAD0WL6EE5CVc1hAD8uej/3
+            x6OKckTkor+GY+3ERycQTRsYljj4JBXbWoRsTapnyVVHZ++72Rfq/w==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1v4nsu2yecf96sega4h32sznnurqwdngurhu3vkxmu2v7vr67zc8seq5nqn
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-25T09:08:20Z"
+    mac: ENC[AES256_GCM,data:qDlJic1buuB3kwBiwQSkCiccrdnq5N0ild4IZ4RkM/R57CoiX7gaIH8/5OSKGoM03CcydF3NojDgnfNvbCdgd7JP9e9YMBOwbGkLLSnL2gPAFE01KWdsF9kkhBv02j7vY8pMkUZ3LRjeAYG5sr3eVkrElGFIvW2dHbSqmHxtnvk=,iv:bREv+wxLWgrn0AXRGKd6/MF+IpyoENscD2QKePM/D8c=,tag:zdBr+mrpgQn3vw57otgMKA==,type:str]
+    version: 3.13.3

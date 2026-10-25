@@ -1,0 +1,65 @@
+# apps/extreme/silverbullet/kustomization.yaml
+# SilverBullet on the Lenovo (cluster `extreme`): served at https://silverbullet.kanokgan.com (host cloudflared,
+# tunnel ubuntu-extreme -> localhost:30300 -> nodeport.yaml) and, for debugging this one instance, at
+# https://silverbullet-ubuntu-extreme.dove-komodo.ts.net (Tailscale sidecar, tailnet only). Login is SilverBullet's
+# own (SB_USER from silverbullet-auth.sops.yaml); there is no Cloudflare Access in front.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base/silverbullet
+  - data.yaml
+  - nodeport.yaml
+  - tailscale.yaml
+  - tailscale-auth.sops.yaml
+  - silverbullet-auth.sops.yaml
+# SilverBullet version: the ONE place to edit for an upgrade (runbook: docs/services/silverbullet.md).
+images:
+  - name: ghcr.io/silverbulletmd/silverbullet
+    newTag: 2.12.1-slim
+patches:
+  - target:
+      kind: Deployment
+      name: silverbullet
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: silverbullet
+      spec:
+        template:
+          spec:
+            serviceAccountName: silverbullet-tailscale
+            containers:
+              - name: tailscale
+                # Deliberate exception to "pin image versions" (same as Immich and Actual): a backward-compatible
+                # networking client that should pick up security fixes. Needs Docker Hub reachable on start.
+                image: tailscale/tailscale:latest
+                imagePullPolicy: Always
+                env:
+                  - name: TS_AUTHKEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: tailscale-auth
+                        key: TS_AUTHKEY
+                  - name: TS_HOSTNAME
+                    value: silverbullet-ubuntu-extreme
+                  - name: TS_KUBE_SECRET
+                    value: silverbullet-tailscale-state
+                  - name: TS_USERSPACE
+                    value: "true"
+                  - name: TS_SERVE_CONFIG
+                    value: /config/serve.json
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 500m
+                    memory: 256Mi
+                volumeMounts:
+                  - name: tailscale-config
+                    mountPath: /config
+            volumes:
+              - name: tailscale-config
+                configMap:
+                  name: tailscale-config

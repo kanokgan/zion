@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: silverbullet-auth
+    namespace: silverbullet
+stringData:
+    SB_USER: ENC[AES256_GCM,data:cfxYmpbWrmpTcS2PVz4SBNTN4PF++AeSrH+lt6o4ph4=,iv:DVD7gTjYLpxWEBoup8593IK8Q1Fy7RUC4Ln/Bhkvn5U=,tag:5RNs8kqSweF0j4uBCQFOXQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBPTkUrQmNCSzd3K2I1aTl1
+            Vzk0ODJmZ1U3QVdPUE5DQ2ZYS0NjVkJGV25jCmVzbVA5S3pWZlBGNE1zZUd5UjBs
+            L1pTVE5ubE5SYm8zcStJV3I3R1FoZnMKLS0tIGFmMldmemUrNDFoSThuM0ZyRUd4
+            SHI2akQwN3NxOEdwODVlb0k2Mk5XVG8Kq9tkM9assupbhk4jYISbpmK4PKLM+Nil
+            heimd4oSDva8kSx7bW6M54f49C2yXncQjPMmNWcLFeITnyV+6blv7w==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1v4nsu2yecf96sega4h32sznnurqwdngurhu3vkxmu2v7vr67zc8seq5nqn
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-25T09:08:20Z"
+    mac: ENC[AES256_GCM,data:NaLAA2g6KHSNHC5ePjOyGXd+CA6d/bHPvb8uldDC7V4W+n0Mk2zCiBJ9AsjAhAFKs78j8nZhal7DsGE4gBgjNVO5DlYQ7NeyBl2gnpw7ayE5hdQLnxD2ap4Qz+glBavMGWziPWqdoWOWTKFjtyyTw1aKmIKT6zM5l1ddQTQhnkQ=,iv:yMGrK0JTfVskr/hTRqd2dbYCgUbpDSSVO73u/ACRr3Q=,tag:Zp0bIlnisCQGOXzgjR81Lg==,type:str]
+    version: 3.13.3
