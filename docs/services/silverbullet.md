@@ -16,9 +16,9 @@ Manifests: `apps/base/silverbullet/`, `apps/extreme/silverbullet/`, `apps/mini/s
 
 Access decisions: no Cloudflare Access in front, only SilverBullet's own login (owner's decision, 2026-10-25); Cloudflare terminates TLS and can see the traffic, as for Actual and Immich. The work laptop reaches it through the public hostname (the company allows `*.kanokgan.com`). The password therefore protects notes on the open internet: use a long random one. SilverBullet locks an account after repeated failures (`SB_LOCKOUT_LIMIT`, default 10 tries, then 60 s).
 
-## Open point to verify before going public
+## Server mode
 
-SilverBullet 2.x defaults to a "multi-space" server mode configured in a Dashboard; `SB_USER` and `SB_FOLDER` are documented as the single-space (legacy) settings, and the docs do not say how the server picks the mode. The manifest uses the single-space settings. On the first start (tailnet test) confirm that opening the page asks for the login from `SB_USER` and that pages are saved under `/srv/silverbullet`. If it shows a Dashboard or account setup instead, stop and change the approach before the tunnel route is added.
+SilverBullet 2.x defaults to a "multi-space" server mode configured in a Dashboard; `SB_USER` and `SB_FOLDER` are documented as the single-space (legacy) settings, and the docs do not say how the server picks the mode. The manifest uses the single-space settings. Confirmed on the first start (2026-10-25): the log says `boot mode: single-space (SB_USER is set)`, the process runs as UID 1000 (the owner of `/srv/silverbullet`), and the "runtime Chrome not found" lines are expected with the `-slim` image. Still to confirm in the browser on the tailnet name before the tunnel route is added: the login prompt, and that a new page is saved under `/srv/silverbullet`. These are legacy settings upstream, so re-check this section when upgrading.
 
 ## Setup (run by the owner)
 
@@ -55,6 +55,8 @@ SilverBullet 2.x defaults to a "multi-space" server mode configured in a Dashboa
 4. Install the backup job (below).
 5. Only after the tailnet test passes: in the Cloudflare dashboard add the route `silverbullet.kanokgan.com` -> `http://localhost:30300` on the tunnel `ubuntu-extreme` (Zero Trust, Networks, Tunnels), and the matching entry in `hosts/ubuntu-extreme/cloudflared/README.md`.
 
+Status: live on the Lenovo since 2026-10-25 (tailnet name and `silverbullet.kanokgan.com` both checked).
+
 ## Verify
 
 ```sh
@@ -89,6 +91,8 @@ sudo rclone --config /home/kanokgan/.config/rclone/rclone.conf check /srv/silver
 The NAS account `sc-zion` can write only under `ZionLabs`, so `/ZionLabs/SilverBullet/Backup` is created by rclone on the first run.
 
 Restore: scale the app to 0 (set `replicas: 0` in a commit), `rclone copy zion-nas:/ZionLabs/SilverBullet/Backup /srv/silverbullet`, scale back to 1.
+
+Status: installed 2026-10-25, first manual run clean, `rclone check` 0 differences over 3 files, timer enabled (first scheduled run 2026-10-26 04:30).
 
 Restore test: **not done yet**. Do it on the mini (below), record the date here.
 
