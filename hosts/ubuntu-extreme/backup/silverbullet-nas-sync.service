@@ -1,0 +1,16 @@
+# hosts/ubuntu-extreme/backup/silverbullet-nas-sync.service
+# Install as /etc/systemd/system/silverbullet-nas-sync.service (the script goes to /usr/local/sbin/). Runs as root so
+# it can read the notes whatever user the container writes them as. The rclone config and the SFTP key stay in the
+# owner's home and are read via RCLONE_CONFIG. Output goes to the journal:
+#   journalctl -u silverbullet-nas-sync -n 30
+[Unit]
+Description=Copy the SilverBullet notes to the Synology
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=RCLONE_CONFIG=/home/kanokgan/.config/rclone/rclone.conf
+ExecStart=/usr/local/sbin/silverbullet-nas-sync.sh
+Nice=10
+IOSchedulingClass=idle

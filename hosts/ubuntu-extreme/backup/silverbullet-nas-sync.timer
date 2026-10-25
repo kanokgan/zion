@@ -1,0 +1,13 @@
+# hosts/ubuntu-extreme/backup/silverbullet-nas-sync.timer
+# Install as /etc/systemd/system/silverbullet-nas-sync.timer. 04:30 every night (the machine's timezone is
+# Asia/Bangkok), after the Immich copy at 04:00. Persistent: a run missed while the machine was off happens at the
+# next boot.
+[Unit]
+Description=Nightly SilverBullet notes copy to the Synology
+
+[Timer]
+OnCalendar=*-*-* 04:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

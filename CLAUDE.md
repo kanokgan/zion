@@ -38,7 +38,7 @@ I'm a software engineer, so skip basic programming explanations. Do teach infra,
 - Machine names: `<os>-<nickname>`, lowercase, e.g. `macos-mini`, `macos-m5`, `ubuntu-extreme`. The same name is used for the `hosts/` folder, the Tailscale device, and the Cloudflare tunnel.
 - Cluster names: the machine's nickname, not its role (`extreme`, `mini`), because roles swap ([ADR 0009](docs/decisions/0009-rebuild-lenovo-in-place.md)). The mini's cluster was renamed from `zion` on 2026-10-20 (the Lima VM and k3s node keep the name `zion`).
 - Tailscale names of pods (sidecars, tailnet-only, for debugging one specific instance): `<app>-<machine>`, e.g. `immich-ubuntu-extreme`. The production name of a service is its `kanokgan.com` hostname, served by whichever machine is primary.
-- Public access: `cloudflared` runs on the host of each machine, in a tunnel named after the machine, and reaches apps on NodePorts on localhost (Immich 30283, Actual 30506). Hostnames are moved between tunnels in the Cloudflare dashboard at a cutover; one hostname belongs to one tunnel.
+- Public access: `cloudflared` runs on the host of each machine, in a tunnel named after the machine, and reaches apps on NodePorts on localhost (Immich 30283, Actual 30506, SilverBullet 30300). Hostnames are moved between tunnels in the Cloudflare dashboard at a cutover; one hostname belongs to one tunnel.
 - One writer per data path: a NAS folder is written by one machine at a time, and a service's old instance is scaled to 0 before the new one starts.
 - One namespace per app (or per logical group); consistent labels and naming
 - Labels on every resource: `app.kubernetes.io/name`, `app.kubernetes.io/instance`, and `app.kubernetes.io/part-of: zion-lab`
