@@ -19,9 +19,12 @@ exec 9>/run/lock/silverbullet-nas-sync.lock
 flock -n 9 || { echo "previous run still going, skipping" >&2; exit 0; }
 
 echo "start $(date -Iseconds)"
+# .silverbullet.auth.json is SilverBullet's own login state (not notes): it is excluded so the NAS holds no auth
+# material, and it is recreated by the server on a restore.
 # Default comparison (size + modification time): notes are small and edited in place, so size alone would miss an edit.
 rclone copy "$SRC" "$DEST" \
   --transfers 4 --checkers 8 \
   --exclude ".DS_Store" --exclude "@eaDir/**" --exclude "#recycle/**" \
+  --exclude ".silverbullet.auth.json" \
   --log-level NOTICE --stats 0
 echo "done $(date -Iseconds)"
