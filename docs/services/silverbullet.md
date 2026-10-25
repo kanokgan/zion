@@ -16,6 +16,8 @@ Manifests: `apps/base/silverbullet/`, `apps/extreme/silverbullet/`, `apps/mini/s
 
 Access decisions: no Cloudflare Access in front, only SilverBullet's own login (owner's decision, 2026-10-25); Cloudflare terminates TLS and can see the traffic, as for Actual and Immich. The work laptop reaches it through the public hostname (the company allows `*.kanokgan.com`). The password therefore protects notes on the open internet: use a long random one. SilverBullet locks an account after repeated failures (`SB_LOCKOUT_LIMIT`, default 10 tries, then 60 s).
 
+Licensing (checked 2026-10-25): the server is MIT licensed and free. The SilverBullet+ desktop app is free for personal use, and its author asks for payment (about $50 a year per person) for work use; it is an honor system. Decision: the work laptop uses the browser only, no desktop app, so no license is needed and no copy of the notes is kept there.
+
 ## Server mode
 
 SilverBullet 2.x defaults to a "multi-space" server mode configured in a Dashboard; `SB_USER` and `SB_FOLDER` are documented as the single-space (legacy) settings, and the docs do not say how the server picks the mode. The manifest uses the single-space settings. Confirmed on the first start (2026-10-25): the log says `boot mode: single-space (SB_USER is set)`, the process runs as UID 1000 (the owner of `/srv/silverbullet`), and the "runtime Chrome not found" lines are expected with the `-slim` image. Still to confirm in the browser on the tailnet name before the tunnel route is added: the login prompt, and that a new page is saved under `/srv/silverbullet`. These are legacy settings upstream, so re-check this section when upgrading.

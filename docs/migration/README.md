@@ -57,6 +57,8 @@ Migration order (ADR 0002): Jellyfin, Plex, Actual Budget, Immich. The Immich st
 
 New service (not a migration), started 2026-10-25: **SilverBullet** notes, on `extreme` with a tailnet-only warm standby on `mini`. Deployed on both clusters and live at `silverbullet.kanokgan.com` on 2026-10-25 ([docs/services/silverbullet.md](../services/silverbullet.md)); the nightly NAS job is installed. Open: a restore test, and the mini refresh procedure. `.silverbullet.auth.json` (login state) is excluded from the backup.
 
+New service, started 2026-10-25: **Obsidian in the browser** (linuxserver image) at `obsidian.kanokgan.com`, behind Cloudflare Access, for the work laptop where installing Obsidian is blocked ([docs/services/obsidian.md](../services/obsidian.md)). Phase 1 is a trial on a copy of the vault; manifests and docs written, not deployed yet. SilverBullet was found unsuitable (needs plugins for basics) and is still running; its removal is to be planned after the Obsidian trial.
+
 Found on `zion-old`, and decided when it was wiped on 2026-10-17:
 - `monitoring` (kube-prometheus, Grafana, Alertmanager) and `web-scraper` (data 50Gi): dropped, their data discarded. To be rebuilt from Git, properly, and mirrored on the mini.
 - `cloudflare`: the in-cluster `cloudflared` and the tunnel `home-brain` are replaced by `cloudflared` on the host of each machine (tunnels `macos-mini` and `ubuntu-extreme`). The `home-brain` tunnel was deleted in the dashboard on 2026-10-21. The Lenovo's Jellyfin was not migrated (ADR 0008).
