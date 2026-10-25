@@ -1,0 +1,81 @@
+# apps/extreme/syncthing/volumes.yaml
+# Two host directories on the Lenovo's NVMe, bound statically (Retain, so deleting a claim never touches the files):
+# - /srv/syncthing/config: this device's identity and settings. Create it first (docs/services/syncthing.md).
+# - /srv/obsidian/vault: the SAME folder the browser Obsidian opens (apps/extreme/obsidian/data.yaml, subPath
+#   vault). Two pods use one host folder on one node; Syncthing is the only one that talks to other devices.
+# The capacities are labels, not quotas.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: syncthing-config-pv
+  labels:
+    app.kubernetes.io/name: syncthing
+    app.kubernetes.io/instance: syncthing-config-pv
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: syncthing
+    name: syncthing-config
+  hostPath:
+    path: /srv/syncthing/config
+    type: Directory
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: syncthing-config
+  namespace: syncthing
+  labels:
+    app.kubernetes.io/name: syncthing
+    app.kubernetes.io/instance: syncthing-config
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: syncthing-config-pv
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: syncthing-vault-pv
+  labels:
+    app.kubernetes.io/name: syncthing
+    app.kubernetes.io/instance: syncthing-vault-pv
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: syncthing
+    name: syncthing-vault
+  hostPath:
+    path: /srv/obsidian/vault
+    type: Directory
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: syncthing-vault
+  namespace: syncthing
+  labels:
+    app.kubernetes.io/name: syncthing
+    app.kubernetes.io/instance: syncthing-vault
+    app.kubernetes.io/part-of: zion-lab
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: syncthing-vault-pv
+  resources:
+    requests:
+      storage: 10Gi

@@ -1,0 +1,62 @@
+# apps/extreme/syncthing/kustomization.yaml
+# Syncthing on the Lenovo (cluster `extreme`): one more device in the owner's Syncthing network, keeping the Obsidian
+# vault in sync. Tailnet only: admin page at https://syncthing-ubuntu-extreme.dove-komodo.ts.net, sync port
+# tcp://syncthing-ubuntu-extreme.dove-komodo.ts.net:22000 (Tailscale sidecar); no public hostname, no NodePort.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base/syncthing
+  - volumes.yaml
+  - tailscale.yaml
+  - tailscale-auth.sops.yaml
+# Syncthing version: the ONE place to edit for an upgrade (runbook: docs/services/syncthing.md).
+images:
+  - name: syncthing/syncthing
+    newTag: 2.1.7
+patches:
+  - target:
+      kind: Deployment
+      name: syncthing
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: syncthing
+      spec:
+        template:
+          spec:
+            serviceAccountName: syncthing-tailscale
+            containers:
+              - name: tailscale
+                # Deliberate exception to "pin image versions" (same as the other apps): a backward-compatible
+                # networking client that should pick up security fixes.
+                image: tailscale/tailscale:latest
+                imagePullPolicy: Always
+                env:
+                  - name: TS_AUTHKEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: tailscale-auth
+                        key: TS_AUTHKEY
+                  - name: TS_HOSTNAME
+                    value: syncthing-ubuntu-extreme
+                  - name: TS_KUBE_SECRET
+                    value: syncthing-tailscale-state
+                  - name: TS_USERSPACE
+                    value: "true"
+                  - name: TS_SERVE_CONFIG
+                    value: /config/serve.json
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 500m
+                    memory: 256Mi
+                volumeMounts:
+                  - name: tailscale-config
+                    mountPath: /config
+            volumes:
+              - name: tailscale-config
+                configMap:
+                  name: tailscale-config

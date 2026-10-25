@@ -1,0 +1,163 @@
+# apps/base/syncthing/syncthing.yaml
+# Syncthing: this machine as one more device in the owner's Syncthing network. It keeps the Obsidian vault
+# (/srv/obsidian/vault, the folder the browser Obsidian opens) in sync with the owner's other devices.
+#
+# - The web admin page (8384) and the sync port (22000) are reachable only on the tailnet (sidecar in the overlay);
+#   devices that cannot use Tailscale connect through Syncthing's relays. There is no public hostname.
+# - Only folders whose path is a volume mounted below survive a restart. A folder added in the admin page under any
+#   other path would be written to the container's temporary disk: always add the volume here first.
+# - The admin page has no password until the owner sets one (first visit; docs/services/syncthing.md).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: syncthing-seed
+  namespace: syncthing
+  labels:
+    app.kubernetes.io/name: syncthing
+    app.kubernetes.io/instance: syncthing-seed
+data:
+  # Copied to the vault folder only when it has no .stignore yet; edits made later in the admin page are kept.
+  stignore: |
+    // Synology NAS system files
+    (?d)@eaDir
+    (?d)#recycle
+    (?d)#snapshot
+    (?d)@tmp
+    (?d).SynologyWorkingDirectory
+
+    // macOS system files
+    (?d).DS_Store
+    (?d)._*
+    (?d).Trash*
+    (?d).fseventsd
+    (?d).Spotlight-V100
+    (?d)*.photoslibrary
+    (?d)Icon\r
+
+    // Windows system files
+    (?d)desktop.ini
+    (?d)Thumbs.db
+
+    // Android system files
+    (?d).thumbnails
+    (?d)LOST.DIR
+    (?d).trashed-*
+    (?d).pending-*
+
+    // FreeFileSync & Sync Tool temporary files
+    (?d)*.ffs_tmp
+    (?d)*.sync-conflict-*
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: syncthing
+  namespace: syncthing
+  labels:
+    app.kubernetes.io/name: syncthing
+    app.kubernetes.io/instance: syncthing
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: syncthing
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: syncthing
+        app.kubernetes.io/instance: syncthing
+        app.kubernetes.io/part-of: zion-lab
+    spec:
+      initContainers:
+        - name: seed-stignore
+          image: busybox:1.37.0
+          command:
+            - sh
+            - -c
+            - '[ -f /vault/.stignore ] || { cp /seed/stignore /vault/.stignore && chown 1000:1000 /vault/.stignore; }'
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: vault
+              mountPath: /vault
+            - name: seed
+              mountPath: /seed
+      containers:
+        - name: syncthing
+          # Tag pinned per cluster in the overlay's `images:` block (upgrade runbook: docs/services/syncthing.md).
+          image: syncthing/syncthing
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            # Do not create the default "Sync" folder on first start.
+            - name: STNODEFAULTFOLDER
+              value: "true"
+          ports:
+            - name: gui
+              containerPort: 8384
+            - name: sync
+              containerPort: 22000
+          readinessProbe:
+            tcpSocket:
+              port: 8384
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8384
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            # Device identity (certificate and key), the device list and the folder list. Losing it means a new
+            # device ID that every other device has to accept again.
+            - name: config
+              mountPath: /var/syncthing/config
+            # The Obsidian vault, at a path that cannot be mistaken for an OS folder of the Lenovo.
+            - name: vault
+              mountPath: /sync/obsidian-vault
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: syncthing-config
+        - name: vault
+          persistentVolumeClaim:
+            claimName: syncthing-vault
+        - name: seed
+          configMap:
+            name: syncthing-seed
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: syncthing
+  namespace: syncthing
+  labels:
+    app.kubernetes.io/name: syncthing
+    app.kubernetes.io/instance: syncthing
+spec:
+  selector:
+    app.kubernetes.io/name: syncthing
+  ports:
+    - name: gui
+      port: 8384
+      targetPort: 8384
+    - name: sync
+      port: 22000
+      targetPort: 22000

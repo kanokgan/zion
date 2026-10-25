@@ -57,7 +57,7 @@ It is a remote desktop: some latency, copy and paste goes through the browser, a
 
 ## Phase 2 (only if the trial works)
 
-The vault must have one writer at a time. Likely design: the Lenovo's local copy becomes another Syncthing peer (a Syncthing app on the Lenovo, sharing `/srv/obsidian/vault` with the Mac, the Android phone and the NAS), so edits in the browser reach every device. To be planned then; Syncthing conflicts are the risk to watch. Until then the copy is disposable and edits made in it do not reach the real vault.
+The trial works (2026-10-25). The Lenovo's copy becomes another Syncthing device (an app on the Lenovo sharing `/srv/obsidian/vault` with the owner's other devices, see [syncthing.md](syncthing.md)), so edits in the browser reach every device. Until it is joined, the copy is disposable and edits made in it do not reach the real vault. Syncthing conflicts are the risk to watch: avoid editing the same note on two devices at once.
 
 ## Backup and restore
 

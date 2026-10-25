@@ -1,0 +1,74 @@
+# apps/extreme/syncthing/tailscale.yaml
+# Tailscale sidecar support for Syncthing on the Lenovo: serve config and a ServiceAccount that lets the sidecar
+# keep its node identity in the Secret syncthing-tailscale-state. The auth key is in tailscale-auth.sops.yaml.
+# Serve config: HTTPS on the tailnet name proxied to the admin page (127.0.0.1:8384), and a plain TCP forward of the
+# sync port, so other devices on the tailnet can connect to tcp://syncthing-ubuntu-extreme.dove-komodo.ts.net:22000.
+# Devices outside the tailnet use Syncthing's relays (outbound only), so nothing is opened on the router.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tailscale-config
+  namespace: syncthing
+  labels:
+    app.kubernetes.io/name: syncthing-tailscale
+    app.kubernetes.io/instance: tailscale-config
+    app.kubernetes.io/part-of: zion-lab
+data:
+  serve.json: |
+    {
+      "TCP": {
+        "443": { "HTTPS": true },
+        "22000": { "TCPForward": "127.0.0.1:22000" }
+      },
+      "Web": {
+        "${TS_CERT_DOMAIN}:443": {
+          "Handlers": { "/": { "Proxy": "http://127.0.0.1:8384" } }
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: syncthing-tailscale
+  namespace: syncthing
+  labels:
+    app.kubernetes.io/name: syncthing-tailscale
+    app.kubernetes.io/instance: syncthing-tailscale
+    app.kubernetes.io/part-of: zion-lab
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: syncthing-tailscale
+  namespace: syncthing
+  labels:
+    app.kubernetes.io/name: syncthing-tailscale
+    app.kubernetes.io/instance: syncthing-tailscale
+    app.kubernetes.io/part-of: zion-lab
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["syncthing-tailscale-state"]
+    verbs: ["get", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: syncthing-tailscale
+  namespace: syncthing
+  labels:
+    app.kubernetes.io/name: syncthing-tailscale
+    app.kubernetes.io/instance: syncthing-tailscale
+    app.kubernetes.io/part-of: zion-lab
+subjects:
+  - kind: ServiceAccount
+    name: syncthing-tailscale
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: syncthing-tailscale
+  apiGroup: rbac.authorization.k8s.io
