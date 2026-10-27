@@ -24,6 +24,10 @@ curl -s http://localhost:30283/api/server/ping       # {"res":"pong"} once Immic
 ```
 The tunnel shows Healthy in the dashboard once the connector is registered.
 
+## Upgrading
+
+`--no-autoupdate` is set on purpose, so the package is bumped by hand: `sudo apt update && sudo apt install --only-upgrade cloudflared && sudo systemctl restart cloudflared`. Full procedure for all three connectors, with verify steps and a version log: [docs/runbooks/upgrading-cloudflared.md](../../../docs/runbooks/upgrading-cloudflared.md).
+
 ## Not in Git
 
 The token. Rotate it in the dashboard if it is ever shown in a log or a chat.

@@ -114,7 +114,7 @@ This repo is public on GitHub (since 2026-10-12) as a portfolio. Every file and 
 - `apps/base/`: Immich and Actual Budget. `apps/extreme/` and `apps/mini/`: their per-cluster overlays (library volume, GPU or CPU image, Tailscale sidecars, NodePorts, encrypted secrets).
 - `infrastructure/`: cluster-wide components. Today the NVIDIA device plugin and monitoring (ADR 0010) for the Lenovo (`base/`, `extreme/`, `extreme/monitoring/`); the ingress, storage and backup ADRs are still pending.
 - `hosts/macos-mini/` and `hosts/ubuntu-extreme/`: the host-level setup outside Flux (Lima VM, native apps, k3s install, GPU notes, `cloudflared`, the nightly NAS backup job).
-- `docs/decisions/`: ADRs. `docs/services/`: per-service docs with backup and restore. `docs/migration/`: migration tracker. `.claude/`: Claude Code settings, the Bash guard hook (needs `jq`) and its test, `hooks/test-guard.sh`.
+- `docs/decisions/`: ADRs. `docs/services/`: per-service docs with backup and restore. `docs/migration/`: migration tracker. `docs/runbooks/`: step-by-step procedures for recurring ops (today: [upgrading cloudflared](docs/runbooks/upgrading-cloudflared.md)). `.claude/`: Claude Code settings, the Bash guard hook (needs `jq`) and its test, `hooks/test-guard.sh`.
 - [script/auto-mount.sh](script/auto-mount.sh): macOS helper that mounts the NAS SMB shares over Tailscale; not part of the cluster.
 - `.pre-commit-config.yaml`, [script/check-denylist.sh](script/check-denylist.sh), `.github/workflows/secret-scan.yaml`: public-repo guardrails (see "Public repository").
 
