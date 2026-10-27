@@ -6,9 +6,9 @@ Three `cloudflared` connectors carry the public hostnames on kanokgan.com. None 
 |---|---|---|---|
 | `ubuntu-extreme` (Lenovo) | `ubuntu-extreme` | apt package, systemd unit `cloudflared` ([setup](../../hosts/ubuntu-extreme/cloudflared/README.md)) | apt |
 | `macos-mini` | `macos-mini` | Homebrew, LaunchDaemon `com.cloudflare.cloudflared` ([setup](../../hosts/macos-mini/README.md)) | brew |
-| Synology DS923+ | NAS tunnel | Container Manager project `cloudflare-tunnel`, image `cloudflare/cloudflared:latest` | re-pull the image |
+| Synology DS923+ | `tnbk-tunnel` | Container Manager project from `/volume1/docker/cloudflare-tunnel/compose.yaml`, image `cloudflare/cloudflared:latest`; serves the DSM UI at `tnbk.kanokgan.com` | re-pull the image |
 
-Risk: a restart drops that tunnel's connections for a few seconds (public Immich, Actual and SilverBullet on the Lenovo; Plex and Jellyfin on the mini; whatever the NAS tunnel serves). Nothing is lost and the connector reconnects by itself. Do one machine at a time.
+Risk: a restart drops that tunnel's connections for a few seconds (public Immich, Actual and SilverBullet on the Lenovo; Plex and Jellyfin on the mini; the DSM UI at `tnbk.kanokgan.com`). Nothing is lost and the connector reconnects by itself. Do one machine at a time.
 
 ## Before: check the version
 
@@ -36,12 +36,21 @@ sudo launchctl kickstart -k system/com.cloudflare.cloudflared
 
 ## Synology NAS (Container Manager)
 
-A restart never updates a container: it is tied to the image it was created from, and `latest` is only looked up when the image is pulled. The project's data lives in `/volume1/docker/cloudflare-tunnel`, not in the image, so removing the image loses nothing.
+A restart never updates a container: it is tied to the image it was created from, and `latest` is only looked up when the image is pulled. The project's `compose.yaml` and data live in `/volume1/docker/cloudflare-tunnel`, not in the image, so removing the image loses nothing.
 
 1. Container Manager, Project, select `cloudflare-tunnel`, Action, **Stop**.
 2. Image, select `cloudflare/cloudflared:latest`, Action, **Delete**.
 3. Registry, search `cloudflare/cloudflared`, **Download**, tag `latest`.
 4. Project, `cloudflare-tunnel`, Action, **Start**. The project recreates the container from the new image.
+
+### What `tnbk-tunnel` exposes
+
+`tnbk.kanokgan.com` serves the DSM login page so the NAS can be reached without Tailscale. It is public, so it sits behind Cloudflare Access (set up 2026-10-28):
+
+- Zero Trust, Access, Applications: application `tnbk` for `tnbk.kanokgan.com`, one policy `owner only` (Allow, Include Emails: the owner's address, login by one-time PIN).
+- DSM side: 2FA enforced for the admin accounts, the default `admin` and `guest` accounts disabled, DSM kept up to date.
+- Only a browser works through this name. The Synology mobile and desktop apps cannot complete the Access login; use Tailscale for them.
+- Test after any change to the application or the tunnel: open the hostname in a private window. The Cloudflare email and PIN screen must appear before anything from DSM. If the PIN email does not arrive, press Resend once and wait; the first code can be slow.
 
 ## Verify
 
@@ -65,4 +74,4 @@ On the NAS, the container log shows the new version at startup. In the Cloudflar
 
 | Date | Lenovo | mini | NAS | Reason |
 |---|---|---|---|---|
-| 2026-10-28 | 2026.10.5 | 2026.10.5 | `latest` pulled the same day | Cloudflare email: upgrade to 2026.10.3 or later |
+| 2026-10-28 | 2026.10.5 | 2026.10.5 | 2026.10.5 | Cloudflare email: upgrade to 2026.10.3 or later. All three tunnels Healthy in the dashboard on 2026.10.5 |
