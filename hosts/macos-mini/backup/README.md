@@ -1,5 +1,7 @@
 # Immich library backup (mini to Synology)
 
+**Status: never installed, and it must stay off.** The mini no longer holds the live Immich library (the Lenovo does, since 2026-10-21), and the Lenovo's job writes the same NAS path ([hosts/ubuntu-extreme/backup/](../../ubuntu-extreme/backup/README.md)); two writers would mix two libraries. The script and the plist stay in Git as the pattern for when the mini becomes primary again, or as the basis of its standby refresh. The text below describes how the job was designed to work.
+
 Nightly at 04:00, `immich-nas-sync.sh` copies `/Volumes/HighSpeed2T/Immich/Backup` to the NAS folder `/ZionLabs/Immich/Backup` with `rclone copy` over SFTP on Tailscale. Immich writes its own database dump at about 00:00, so by 04:00 the dump is complete.
 
 - **One way, never deletes.** Photos deleted in Immich stay on the NAS, and a restore brings them back. Never sync the NAS onto the NVMe (it would overwrite newer uploads). Only one machine writes to that NAS path at any time.

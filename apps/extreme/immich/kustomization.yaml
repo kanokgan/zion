@@ -13,8 +13,8 @@ resources:
   - secret.sops.yaml
   - tailscale-auth.sops.yaml
 # Immich version: the ONE place to edit for an upgrade (runbook: docs/services/immich.md). Server and machine
-# learning must always have the same version, so change both lines together. Pinned to v3.2.4, the version of the
-# dump the cutover restores; upgrade afterwards, not during. The CUDA image is the same version with a -cuda suffix.
+# learning must always have the same version, so change both lines together. The CUDA image is the same version
+# with a -cuda suffix.
 images:
   - name: ghcr.io/immich-app/immich-server
     newTag: v3.3.4

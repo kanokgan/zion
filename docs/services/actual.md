@@ -24,12 +24,12 @@ What an export does not contain: the server's logins and budget file IDs. After 
 
 Optional later: a CronJob that copies `/data` to the NAS over SFTP on the LAN (needs an SFTP key as a SOPS secret and the NAS's LAN address).
 
-## Restore test (on the mini, with disposable data)
+## Restore test (done 2026-10-12, on the mini with disposable data)
 
 1. In the Lenovo's Actual: Settings, Export data. Keep the zip safe (it contains the budget).
 2. On `https://actual-macos-mini.dove-komodo.ts.net`: set a server password on first open, then import the budget from the zip.
 3. Check accounts, recent transactions and the balances against the Lenovo.
-4. Result: export from the Lenovo and import on the mini worked (2026-10-12).
+4. Result: export from the Lenovo and import on the mini worked. This tested the manual export path, not an automated backup.
 
 Note: importing creates a new budget file ID on the new server. Devices that already hold a copy have to re-download. For the real cutover, copying the `/data` folder from the Lenovo keeps the same IDs and logins.
 
@@ -37,26 +37,25 @@ Note: importing creates a new budget file ID on the new server. Devices that alr
 
 Actual migrates its data files when a newer version starts, and an older version may refuse to open migrated data. Rolling back means restoring a backup, not just reverting the tag.
 
-**Where the version lives:** only in the `images:` block of `apps/mini/actual/kustomization.yaml`. The base manifest has no tag.
+**Where the version lives:** only in the `images:` block of the cluster's overlay: `apps/extreme/actual/kustomization.yaml` (production) and `apps/mini/actual/kustomization.yaml` (the stale copy). The base manifest has no tag.
 
 Before:
 1. Read the release notes for breaking changes (`https://actualbudget.org/docs/releases`).
 2. Export the budget (Settings, Export data) and keep the zip on the NAS at `/ZionLabs/Actual/Backup`.
 3. Confirm the tag exists on Docker Hub (`actualbudget/actual-server`).
-4. Until cutover, keep the mini on the same version as the Lenovo unless you are deliberately testing the new one there first.
 
 Upgrade:
-1. Edit `newTag` in `apps/mini/actual/kustomization.yaml`.
-2. Check the render: `kustomize build apps/mini | grep 'image: actualbudget'`.
-3. Commit (`actual: upgrade to X.Y.Z`), push, then `flux reconcile kustomization apps --with-source --context mini`.
+1. Edit `newTag` in `apps/extreme/actual/kustomization.yaml`. Leave the mini alone unless you are deliberately testing the new version there first.
+2. Check the render: `kustomize build apps/extreme | grep 'image: actualbudget'`.
+3. Commit (`actual: upgrade to X.Y.Z`) and push. Flux applies it within its interval.
 
 Verify:
 ```sh
-kubectl --context mini rollout status deploy/actual -n actual
-kubectl --context mini logs deploy/actual -n actual --tail=50
-flux get kustomization apps --context mini   # READY True
+kubectl --context extreme rollout status deploy/actual -n actual
+kubectl --context extreme logs deploy/actual -n actual --tail=50
+flux get kustomization apps --context extreme   # READY True
 ```
-Then open the app and check accounts and recent transactions.
+Then open `https://actual.kanokgan.com` and check accounts and recent transactions.
 
 Rollback: revert the commit if the pod never became healthy. If data was migrated, restore the exported zip into the old version on a fresh volume.
 
@@ -68,5 +67,4 @@ Rollback: revert the commit if the pod never became healthy. If data was migrate
 ## Open items
 
 - The mini's Actual is kept at 1 replica on purpose (decided 2026-10-21): it is a stale copy with its own data, so it does not conflict with the Lenovo's, but anything entered there is not synchronised and will be lost. Enter data only at `actual.kanokgan.com`. Scale it to 0 in `apps/mini/actual/kustomization.yaml` if it ever causes confusion.
-- Backup is manual export to the NAS. Automating it with a CronJob is optional (backup ADR).
-- Upgrade runbook below still names the mini's overlay in places; the Lenovo's is `apps/extreme/actual/kustomization.yaml`.
+- Backup is a manual export to the NAS. Automating it with a CronJob or a host job is optional (backup ADR).

@@ -38,8 +38,8 @@ spec:
             summary: "Disk / on {{ $labels.instance }} is {{ $value | humanizePercentage }} full"
             description: "k3s, Postgres and Immich start failing when this fills up."
 
-        # The Lenovo's wired link negotiated 100 Mb/s on 2026-10-17 (hosts/ubuntu-extreme/README.md). 1 Gb/s is 125000000 bytes/s.
-        # This fires today and keeps firing until the cable or router port is fixed.
+        # The Lenovo's wired link negotiated 100 Mb/s on 2026-10-17 and was fixed on 2026-10-18 (hosts/ubuntu-extreme/README.md).
+        # 1 Gb/s is 125000000 bytes/s. This fires again if the link drops back to 100 Mb/s.
         - alert: HostNetworkLinkSlow
           expr: |
             node_network_speed_bytes{device=~"en.*|eth.*"} > 0

@@ -1,6 +1,13 @@
 # cloudflared on ubuntu-extreme
 
-Public access for the Lenovo, like the mini's (`hosts/macos-mini/README.md`): `cloudflared` runs on the host, not in the cluster (ADR 0009). It reaches the apps through NodePorts on `localhost`: Immich 30283, Actual 30506, SilverBullet 30300, Obsidian 30320 (`apps/extreme/*/nodeport.yaml`). Obsidian's route (`obsidian.kanokgan.com` -> `http://localhost:30320`) must only be added after a Cloudflare Access policy protects the hostname ([docs/services/obsidian.md](../../../docs/services/obsidian.md)). The SilverBullet route (`silverbullet.kanokgan.com` -> `http://localhost:30300`) was added in the dashboard on 2026-10-25 after its tailnet test passed ([docs/services/silverbullet.md](../../../docs/services/silverbullet.md)).
+Public access for the Lenovo, like the mini's (`hosts/macos-mini/README.md`): `cloudflared` runs on the host, not in the cluster (ADR 0009). It reaches the apps through NodePorts on `localhost`: Immich 30283, Actual 30506, SilverBullet 30300, Obsidian 30320 (`apps/extreme/*/nodeport.yaml`). Current routes on the tunnel `ubuntu-extreme` (managed in the Cloudflare dashboard, not in Git):
+
+| Hostname | Service | Note |
+|---|---|---|
+| `immich.kanokgan.com` | `http://localhost:30283` | [immich.md](../../../docs/services/immich.md) |
+| `actual.kanokgan.com` | `http://localhost:30506` | [actual.md](../../../docs/services/actual.md) |
+| `silverbullet.kanokgan.com` | `http://localhost:30300` | added 2026-10-25 after its tailnet test passed ([silverbullet.md](../../../docs/services/silverbullet.md)) |
+| `obsidian.kanokgan.com` | `http://localhost:30320` | behind a Cloudflare Access policy, which must exist before the route ([obsidian.md](../../../docs/services/obsidian.md)) |
 
 ## Setup (once, run by the owner)
 
@@ -13,7 +20,7 @@ Public access for the Lenovo, like the mini's (`hosts/macos-mini/README.md`): `c
    sudo cp cloudflared.service /etc/systemd/system/
    sudo systemctl daemon-reload && sudo systemctl enable --now cloudflared
    ```
-3. Do **not** add the public hostnames yet. At the cutover, move `immich.kanokgan.com` and `actual.kanokgan.com` from the tunnel `macos-mini` to `ubuntu-extreme` (service `http://localhost:30283` and `http://localhost:30506`). A hostname can point at one tunnel only; if the dashboard complains, fix the DNS record first (the error 1016 on 2026-10-17 was a record created under the wrong tunnel).
+3. Add a public hostname only when its service runs and has passed its tailnet test. When moving one from another tunnel (as `immich.kanokgan.com` and `actual.kanokgan.com` were moved from `macos-mini`), remember that a hostname can point at one tunnel only; if the dashboard complains, fix the DNS record first (the error 1016 on 2026-10-17 was a record created under the wrong tunnel). Adding a route before the connector exists gives Cloudflare error 1033.
 
 ## Verify
 
@@ -22,7 +29,7 @@ systemctl is-active cloudflared
 journalctl -u cloudflared -n 20 --no-pager          # "Registered tunnel connection" lines
 curl -s http://localhost:30283/api/server/ping       # {"res":"pong"} once Immich runs
 ```
-The tunnel shows Healthy in the dashboard once the connector is registered.
+The tunnel shows Healthy in the dashboard once the connector is registered (`cloudflared` 2026.10.5 since 2026-10-28).
 
 ## Upgrading
 

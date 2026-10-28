@@ -20,7 +20,7 @@ Licensing (checked 2026-10-25): the server is MIT licensed and free. The SilverB
 
 ## Server mode
 
-SilverBullet 2.x defaults to a "multi-space" server mode configured in a Dashboard; `SB_USER` and `SB_FOLDER` are documented as the single-space (legacy) settings, and the docs do not say how the server picks the mode. The manifest uses the single-space settings. Confirmed on the first start (2026-10-25): the log says `boot mode: single-space (SB_USER is set)`, the process runs as UID 1000 (the owner of `/srv/silverbullet`), and the "runtime Chrome not found" lines are expected with the `-slim` image. Still to confirm in the browser on the tailnet name before the tunnel route is added: the login prompt, and that a new page is saved under `/srv/silverbullet`. These are legacy settings upstream, so re-check this section when upgrading.
+SilverBullet 2.x defaults to a "multi-space" server mode configured in a Dashboard; `SB_USER` and `SB_FOLDER` are documented as the single-space (legacy) settings, and the docs do not say how the server picks the mode. The manifest uses the single-space settings. Confirmed on the first start (2026-10-25): the log says `boot mode: single-space (SB_USER is set)`, the process runs as UID 1000 (the owner of `/srv/silverbullet`), and the "runtime Chrome not found" lines are expected with the `-slim` image. Login and saving a page were checked on the tailnet name before the tunnel route was added. These are legacy settings upstream, so re-check this section when upgrading.
 
 ## Setup (run by the owner)
 
@@ -114,7 +114,6 @@ The mini has no backup job and starts empty. To refresh it from the NAS copy: se
 
 ## Open items
 
-- Verify the single-space login behaviour (above) and that tag `2.12.1-slim` pulls on both architectures.
 - Restore test and the mini refresh procedure.
-- Import the existing notes (by the owner, by hand).
-- Add the monitoring alert for disk usage once the monitoring stages are done (`docs/services/monitoring.md`).
+- Import the existing notes (by the owner, by hand), or decide to remove SilverBullet in favour of [Obsidian in the browser](obsidian.md), which the owner found more suitable.
+- Disk usage is covered by the root disk alert (80% and 90%, [monitoring.md](monitoring.md)); there is no per-directory alert.

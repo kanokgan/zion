@@ -1,6 +1,10 @@
-# CLAUDE.md: Zion Lab project instructions
+# CLAUDE.md
 
-This file provides guidance to Claude (Claude Code and claude.ai) when working with this repository and the Zion Lab project.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Zion Lab project instructions
+
+These instructions apply to Claude Code and claude.ai when working with this repository and the Zion Lab project.
 
 ## Purpose
 Zion Lab is my homelab. It has two equal goals:
@@ -17,7 +21,7 @@ I'm a software engineer, so skip basic programming explanations. Do teach infra,
 - Problem: the setup grew ad hoc from AI-generated commands. There's no single source of truth, no consistent conventions, and it's not well documented. The goal is to rebuild it into a clean, well-organized, reproducible setup **without losing data or breaking working services**.
 
 ## Environment
-- **`extreme`**: the cluster on the Lenovo X1 Extreme2 (host `ubuntu-extreme`), rebuilt ONLY from this repo on 2026-10-17 with the OS kept ([ADR 0009](docs/decisions/0009-rebuild-lenovo-in-place.md)). It replaced the legacy cluster `zion-old`, which was wiped. Actual Budget and Immich run here (production; Immich cut over on 2026-10-20 to 21, runbook in [docs/services/immich.md](docs/services/immich.md)); its nightly NAS backup job is in [hosts/ubuntu-extreme/backup/](hosts/ubuntu-extreme/backup/README.md).
+- **`extreme`**: the cluster on the Lenovo X1 Extreme2 (host `ubuntu-extreme`), rebuilt ONLY from this repo on 2026-10-17 with the OS kept ([ADR 0009](docs/decisions/0009-rebuild-lenovo-in-place.md)). It replaced the legacy cluster `zion-old`, which was wiped. Actual Budget and Immich run here (production; Immich cut over on 2026-10-20 to 21, runbook in [docs/services/immich.md](docs/services/immich.md)), plus SilverBullet, Obsidian in the browser (behind Cloudflare Access) and Syncthing (keeps the Obsidian vault in sync), and monitoring (ADR 0010); its nightly NAS backup jobs (Immich, SilverBullet) are in [hosts/ubuntu-extreme/backup/](hosts/ubuntu-extreme/backup/README.md).
 - **`mini`**: the cluster on a Mac mini M2 (ARM64), built ONLY from this repo: k3s in a Lima VM ([ADR 0003](docs/decisions/0003-kubernetes-on-macos.md)). It served Immich until the cutover; it now holds an old, frozen copy of Immich (kept running on purpose at its Tailscale name, no uploads) and is meant to become the warm standby once a refresh procedure exists ([ADR 0004](docs/decisions/0004-mini-as-immich-standby.md)). Renamed from `zion` on 2026-10-20; the Lima VM and the k3s node are still called `zion` (local-path volumes are tied to the node name). Clusters are named after the machine, not the role, because roles swap.
 - Plex and Jellyfin run natively on the mini, outside Kubernetes ([ADR 0008](docs/decisions/0008-native-media-servers-on-mini.md)); host-level setup is in [hosts/macos-mini/](hosts/macos-mini/README.md).
 - Never two instances writable against the same data: a service's old instance is scaled to 0 before the new one takes over, and only one machine writes to a given NAS path.
@@ -110,12 +114,43 @@ This repo is public on GitHub (since 2026-10-12) as a portfolio. Every file and 
 
 ## Repository contents (current)
 
-- `clusters/extreme/` (the Lenovo) and `clusters/mini/` (the mini): Flux bootstrap files (`flux-system/`, generated, do not edit) and the Kustomizations (`apps.yaml`, plus `infrastructure.yaml` on `extreme`), which apply the folders below with SOPS decryption.
-- `apps/base/`: Immich and Actual Budget. `apps/extreme/` and `apps/mini/`: their per-cluster overlays (library volume, GPU or CPU image, Tailscale sidecars, NodePorts, encrypted secrets).
-- `infrastructure/`: cluster-wide components. Today the NVIDIA device plugin and monitoring (ADR 0010) for the Lenovo (`base/`, `extreme/`, `extreme/monitoring/`); the ingress, storage and backup ADRs are still pending.
-- `hosts/macos-mini/` and `hosts/ubuntu-extreme/`: the host-level setup outside Flux (Lima VM, native apps, k3s install, GPU notes, `cloudflared`, the nightly NAS backup job).
-- `docs/decisions/`: ADRs. `docs/services/`: per-service docs with backup and restore. `docs/migration/`: migration tracker. `docs/runbooks/`: step-by-step procedures for recurring ops (today: [upgrading cloudflared](docs/runbooks/upgrading-cloudflared.md)). `.claude/`: Claude Code settings, the Bash guard hook (needs `jq`) and its test, `hooks/test-guard.sh`.
+- `clusters/extreme/` (the Lenovo) and `clusters/mini/` (the mini): Flux bootstrap files (`flux-system/`, generated, do not edit) and the Flux Kustomizations that apply the folders below with SOPS decryption. See "How Flux applies the repo".
+- `apps/base/`: Immich, Actual Budget, SilverBullet, Obsidian, Syncthing. `apps/extreme/` and `apps/mini/`: per-cluster overlays (library volume, GPU or CPU image, Tailscale sidecars, NodePorts, encrypted secrets). `mini` runs only Immich, Actual and SilverBullet; the rest are `extreme` only.
+- `infrastructure/`: cluster-wide components for the Lenovo only: the NVIDIA device plugin and monitoring (ADR 0010: kube-prometheus-stack HelmRelease, Telegram alerts, Grafana on the tailnet) under `base/`, `extreme/`, `extreme/monitoring/`. The ingress, storage and backup ADRs are still pending.
+- `hosts/macos-mini/` and `hosts/ubuntu-extreme/`: the host-level setup outside Flux (Lima VM, native apps, k3s install, GPU notes, `cloudflared`, the nightly NAS backup jobs as launchd/systemd units).
+- `docs/decisions/`: ADRs. `docs/services/`: one doc per service (actual, immich, monitoring, obsidian, silverbullet, syncthing) with backup and restore. `docs/migration/`: migration tracker. `docs/runbooks/`: step-by-step procedures for recurring ops (today: [upgrading cloudflared](docs/runbooks/upgrading-cloudflared.md)). `.claude/`: Claude Code settings (allow/deny lists), the Bash guard hook (needs `jq`) and its test.
 - [script/auto-mount.sh](script/auto-mount.sh): macOS helper that mounts the NAS SMB shares over Tailscale; not part of the cluster.
 - `.pre-commit-config.yaml`, [script/check-denylist.sh](script/check-denylist.sh), `.github/workflows/secret-scan.yaml`: public-repo guardrails (see "Public repository").
 
-There is no build system, linter, or test suite yet. Validate manifests with `kustomize build apps/extreme` and `kustomize build apps/mini` (or `kubectl kustomize`) before committing.
+## Commands
+
+There is no build system or test suite. Before suggesting a commit:
+
+```sh
+kustomize build apps/extreme            # render the cluster's apps (also: apps/mini, infrastructure/extreme, infrastructure/extreme/monitoring)
+kustomize build apps/extreme | kubeconform -ignore-missing-schemas   # schema check (kubeconform and yamllint are allowed in .claude/settings.json)
+pre-commit run --all-files              # gitleaks + .denylist check (one-time: pip install pre-commit && pre-commit install)
+.claude/hooks/test-guard.sh             # after any change to .claude/hooks/guard-bash.sh
+flux get kustomizations --context extreme   # read-only sync status (allowed); never `flux reconcile`
+```
+
+`kubectl kustomize <dir>` is the same render if `kustomize` itself is not installed (it was not on the Mac on 2026-10-29). `kustomize build` of a folder with `*.sops.yaml` files works without the key (it renders the ciphertext); decryption happens only in the cluster.
+
+## How Flux applies the repo
+
+Each cluster has one Flux `GitRepository` (`flux-system`) and several Flux Kustomizations in `clusters/<cluster>/`, each pointing at one path:
+
+| Cluster | Kustomization | Path | Depends on |
+|---|---|---|---|
+| `extreme` | `infrastructure` | `infrastructure/extreme` (GPU device plugin only) | none |
+| `extreme` | `apps` | `apps/extreme` | `infrastructure` (pods request `nvidia.com/gpu`) |
+| `extreme` | `monitoring` | `infrastructure/extreme/monitoring` | `infrastructure`; deliberately separate so a failing Helm release cannot block the apps |
+| `mini` | `apps` | `apps/mini` | none |
+
+- A new app is only deployed once it is listed in `apps/<cluster>/kustomization.yaml`. Overlay folders `apps/<cluster>/<app>/` pull in `../../base/<app>` and add the cluster-specific parts. `prune: true` is on everywhere: removing a resource from Git deletes it from the cluster (PVC deletion included, mind the reclaim policy).
+- Monitoring lives under `infrastructure/extreme/monitoring/`, which is intentionally NOT referenced from `infrastructure/extreme/kustomization.yaml`.
+- Public apps are reached through the host's `cloudflared` on a fixed NodePort (the host cannot resolve cluster DNS); tailnet-only access goes through a Tailscale sidecar per app. Each overlay's `nodeport.yaml`/`tailscale.yaml` header comments explain the specifics.
+
+## Adding or changing a secret
+
+Only `data`/`stringData` values are encrypted (`.sops.yaml` rules, age recipient). Never decrypt or open the plaintext. For a new secret, a `*.sops.yaml.template` with placeholders lives in a `secrets/` folder that is not applied (example: [infrastructure/extreme/monitoring/secrets/README.md](infrastructure/extreme/monitoring/secrets/README.md)); the owner copies it, fills it in an editor and runs `sops --encrypt --in-place <file>`. Do not reference a new secret from a `kustomization.yaml` until the encrypted file exists, or Flux will fail the sync.

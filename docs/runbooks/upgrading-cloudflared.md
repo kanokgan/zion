@@ -8,7 +8,7 @@ Three `cloudflared` connectors carry the public hostnames on kanokgan.com. None 
 | `macos-mini` | `macos-mini` | Homebrew, LaunchDaemon `com.cloudflare.cloudflared` ([setup](../../hosts/macos-mini/README.md)) | brew |
 | Synology DS923+ | `tnbk-tunnel` | Container Manager project from `/volume1/docker/cloudflare-tunnel/compose.yaml`, image `cloudflare/cloudflared:latest`; serves the DSM UI at `tnbk.kanokgan.com` | re-pull the image |
 
-Risk: a restart drops that tunnel's connections for a few seconds (public Immich, Actual and SilverBullet on the Lenovo; Plex and Jellyfin on the mini; the DSM UI at `tnbk.kanokgan.com`). Nothing is lost and the connector reconnects by itself. Do one machine at a time.
+Risk: a restart drops that tunnel's connections for a few seconds (public Immich, Actual, SilverBullet and Obsidian on the Lenovo; Plex and Jellyfin on the mini; the DSM UI at `tnbk.kanokgan.com`). Nothing is lost and the connector reconnects by itself. Do one machine at a time.
 
 ## Before: check the version
 

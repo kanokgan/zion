@@ -1,6 +1,6 @@
 # clusters/extreme/infrastructure.yaml
-# Applies cluster-wide components (the GPU device plugin) before the apps. `flux bootstrap` adds flux-system/
-# beside this file; the `apps` Kustomization (to be added with apps/extreme/) depends on this one.
+# Applies cluster-wide components (the GPU device plugin) before the apps. The `apps` and `monitoring`
+# Kustomizations (apps.yaml, monitoring.yaml beside this file) depend on this one.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:

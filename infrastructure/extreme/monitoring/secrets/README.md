@@ -1,6 +1,6 @@
 # Monitoring secrets (templates)
 
-Three secrets are needed for stage 2 of [ADR 0010](../../../../docs/decisions/0010-monitoring.md). Only templates with placeholders are in Git here; the real files are encrypted with SOPS (ADR 0007) and live one folder up, next to `helmrelease.yaml`. Nothing in this folder is applied to the cluster.
+Three secrets are needed by [ADR 0010](../../../../docs/decisions/0010-monitoring.md) stage 2. Only templates with placeholders are in Git here; the real files are encrypted with SOPS (ADR 0007) and live one folder up, next to `helmrelease.yaml`, where they already exist and are wired into the HelmRelease. Nothing in this folder is applied to the cluster. Use the templates to rebuild a secret or to rotate one.
 
 | Template | Becomes | Holds |
 |---|---|---|
@@ -28,6 +28,6 @@ Repeat for the other two. Do the edit and the encrypt back to back: for those se
 
 ## After that
 
-Tell Claude the three files exist. The HelmRelease values and `kustomization.yaml` are then changed to use them (Grafana admin secret, the tailnet sidecar, the Alertmanager config), in one commit, so Flux never references a Secret that is not there yet.
+For a new secret name, change the HelmRelease values and `kustomization.yaml` in the same commit that adds the encrypted file, so Flux never references a Secret that is not there yet. To change a value in an existing file, edit it with `sops <file>` (it decrypts for the editor and encrypts again on save).
 
 If a token is ever shown on a screen share, a log or a chat, rotate it: `/revoke` in BotFather for the bot, a new key in the Tailscale console, a new Grafana password.
