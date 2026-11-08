@@ -13,7 +13,7 @@ resources:
 # 2026-10-17; the mini's overlay keeps the same version until its copy is stopped.
 images:
   - name: actualbudget/actual-server
-    newTag: 26.10.0
+    newTag: 26.11.0
 patches:
   - target:
       kind: Deployment
