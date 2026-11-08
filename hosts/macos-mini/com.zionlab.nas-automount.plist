@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  hosts/macos-mini/com.zionlab.nas-automount.plist
+  Per-user LaunchAgent (not a daemon): Finder mounts belong to the logged-in user.
+  Runs script/auto-mount.sh at login and every 5 minutes; it exits silently when
+  the NAS is unreachable and skips shares that are already mounted.
+  Install: copy to ~/Library/LaunchAgents/ and `launchctl bootstrap gui/$(id -u) <file>`.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.zionlab.nas-automount</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/kanokgan/Developer/zion/script/auto-mount.sh</string>
+    </array>
+    <key>StartInterval</key>
+    <integer>300</integer>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/zionlab-nas-automount.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/zionlab-nas-automount.log</string>
+</dict>
+</plist>
