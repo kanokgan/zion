@@ -14,7 +14,7 @@ SHARES=(
     "temp;smb://$NAS_HOST/temp"
     "Projects;smb://$NAS_HOST/Projects"
     "ZionLabs;smb://$NAS_HOST/ZionLabs"
-    # Personal drives: replace the placeholders with the real share names
+    # Personal drives
     "KanokganDrive;smb://$NAS_HOST/KanokganDrive"
     "JongdeeDrive;smb://$NAS_HOST/JongdeeDrive"
     "OrawanDrive;smb://$NAS_HOST/OrawanDrive"
@@ -28,9 +28,10 @@ for ITEM in "${SHARES[@]}"; do
     
     # Check if this specific volume folder exists
     if [ ! -d "/Volumes/$SHARE_NAME" ]; then
-        # timeout guards against a stalled SMB session hanging/prompting if the link drops mid-mount
+        # perl alarm is a 10 s timeout (macOS has no `timeout`); it guards against a stalled
+        # SMB session hanging if the link drops mid-mount.
         # try/on error keeps a failed mount from ever surfacing a Finder alert dialog
-        timeout 10 osascript -e "try
+        perl -e 'alarm shift; exec @ARGV' 10 osascript -e "try
             tell application \"Finder\" to mount volume \"$NAS_URL\"
         end try" > /dev/null 2>&1
         # Wait 2 seconds before mounting the next one to prevent Finder race conditions
