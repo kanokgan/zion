@@ -15,10 +15,10 @@ SHARES=(
     "Projects;smb://$NAS_HOST/Projects"
     "ZionLabs;smb://$NAS_HOST/ZionLabs"
     # Personal drives: replace the placeholders with the real share names
-    "Member1Drive;smb://$NAS_HOST/Member1Drive"
-    "Member2Drive;smb://$NAS_HOST/Member2Drive"
-    "Member3Drive;smb://$NAS_HOST/Member3Drive"
-    "Member4Drive;smb://$NAS_HOST/Member4Drive"
+    "KanokganDrive;smb://$NAS_HOST/KanokganDrive"
+    "JongdeeDrive;smb://$NAS_HOST/JongdeeDrive"
+    "OrawanDrive;smb://$NAS_HOST/OrawanDrive"
+    "ChurinDrive;smb://$NAS_HOST/ChurinDrive"
 )
 
 # 3. Mount each share securely
