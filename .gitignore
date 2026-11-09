@@ -10,6 +10,9 @@
 # Private terms checked by script/check-denylist.sh (this repo is public)
 .denylist
 
+# Personal exports waiting to be processed (Notion export etc.): never commit, this repo is public
+inbox/
+
 # Kubeconfigs
 kubeconfig*
 *.kubeconfig
