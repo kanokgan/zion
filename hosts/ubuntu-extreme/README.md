@@ -16,8 +16,8 @@ Sections: access, what lives on the host, the NVIDIA stack, the network incident
 | Path or unit | What | Where it is described |
 |---|---|---|
 | `/srv/immich` | Immich library (static PV), root-owned | [immich.md](../../docs/services/immich.md) |
-| `/srv/silverbullet` | SilverBullet notes (static PV) | [silverbullet.md](../../docs/services/silverbullet.md) |
-| `/srv/obsidian` (`config/`, `vault/`) | Obsidian settings and the synced vault | [obsidian.md](../../docs/services/obsidian.md) |
+| `/srv/silverbullet` | SilverBullet's old space, unused since 2026-11-11 (SilverBullet now opens the vault below) | [silverbullet.md](../../docs/services/silverbullet.md) |
+| `/srv/obsidian` (`config/`, `vault/`) | Obsidian settings and the synced vault (also opened by SilverBullet) | [obsidian.md](../../docs/services/obsidian.md) |
 | `/srv/syncthing/config` | Syncthing identity and config | [syncthing.md](../../docs/services/syncthing.md) |
 | `/mnt/*` and `/srv/external/*` | CIFS mounts of NAS shares (`/etc/fstab`, credentials outside Git, pattern in `fstab.example`) | [immich.md](../../docs/services/immich.md), "External libraries" |
 | `cloudflared.service` | tunnel `ubuntu-extreme` | [cloudflared/](cloudflared/README.md) |

@@ -1,43 +1,47 @@
 # apps/extreme/silverbullet/data.yaml
-# The notes: the host directory /srv/silverbullet on the Lenovo's NVMe, deliberately outside /var/lib/rancher so that
-# removing or reinstalling k3s never touches it (same pattern as Immich's library). Bound statically to
-# silverbullet-data; Retain so deleting the claim never touches the files. Create the directory before the first
-# start (docs/services/silverbullet.md). hostPath ignores the capacity: it is a declared size, not a quota, so watch
-# `df -h /srv` as the space fills with PDFs and spreadsheets.
+# SilverBullet's space is the Obsidian vault: the host directory /srv/obsidian/vault on the Lenovo's NVMe, the SAME folder
+# the browser Obsidian (apps/extreme/obsidian/data.yaml) and Syncthing (apps/extreme/syncthing/volumes.yaml) mount.
+# Three pods, one folder, one node; Syncthing is the only one that talks to other devices. Bound statically to
+# silverbullet-vault; Retain so deleting the claim never touches the files. The folder is created and filled by the
+# Obsidian setup (docs/services/obsidian.md). hostPath ignores the capacity: it is a label, not a quota.
+#
+# History: until 2026-11-11 this was a separate, nearly empty space at /srv/silverbullet (PV/PVC `silverbullet-data`).
+# A PV's hostPath and a PVC's volumeName cannot be edited in place, so the claim was renamed instead; the old
+# directory is untouched on disk (Retain) and is still what the nightly NAS job copies (docs/services/silverbullet.md).
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: silverbullet-data-pv
+  name: silverbullet-vault-pv
   labels:
     app.kubernetes.io/name: silverbullet
-    app.kubernetes.io/instance: silverbullet-data-pv
+    app.kubernetes.io/instance: silverbullet-vault-pv
     app.kubernetes.io/part-of: zion-lab
 spec:
   capacity:
-    storage: 100Gi
+    storage: 30Gi
   accessModes: [ReadWriteOnce]
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
   claimRef:
     namespace: silverbullet
-    name: silverbullet-data
+    name: silverbullet-vault
   hostPath:
-    path: /srv/silverbullet
+    path: /srv/obsidian/vault
     type: Directory
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: silverbullet-data
+  name: silverbullet-vault
   namespace: silverbullet
   labels:
     app.kubernetes.io/name: silverbullet
-    app.kubernetes.io/instance: silverbullet-data
+    app.kubernetes.io/instance: silverbullet-vault
     app.kubernetes.io/part-of: zion-lab
 spec:
   accessModes: [ReadWriteOnce]
   storageClassName: ""
-  volumeName: silverbullet-data-pv
+  volumeName: silverbullet-vault-pv
   resources:
     requests:
-      storage: 100Gi
+      storage: 30Gi

@@ -29,6 +29,14 @@ patches:
         template:
           spec:
             serviceAccountName: silverbullet-tailscale
+            # The space is the Obsidian vault (data.yaml), not the base's `silverbullet-data` claim.
+            volumes:
+              - name: data
+                persistentVolumeClaim:
+                  claimName: silverbullet-vault
+              - name: tailscale-config
+                configMap:
+                  name: tailscale-config
             containers:
               - name: tailscale
                 # Deliberate exception to "pin image versions" (same as Immich and Actual): a backward-compatible
@@ -59,7 +67,3 @@ patches:
                 volumeMounts:
                   - name: tailscale-config
                     mountPath: /config
-            volumes:
-              - name: tailscale-config
-                configMap:
-                  name: tailscale-config

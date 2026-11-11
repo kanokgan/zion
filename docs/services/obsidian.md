@@ -67,4 +67,4 @@ Version lives in the `images:` block of `apps/extreme/obsidian/kustomization.yam
 
 - Decide whether a nightly NAS copy of the vault is needed on top of the other devices' copies.
 - Restore test (resync a vault from the other devices into an empty folder).
-- SilverBullet is still running next to this; decide whether to remove it ([silverbullet.md](silverbullet.md)).
+- SilverBullet on the Lenovo now opens this same vault as a second editor (since 2026-11-11, [silverbullet.md](silverbullet.md)); keep to one editor per note at a time. Decide whether to keep both.

@@ -1,13 +1,15 @@
 # SilverBullet
 
-Personal notes as markdown pages in a folder, edited in the browser. Production runs on the Lenovo (cluster `extreme`, host `ubuntu-extreme`) at `silverbullet.kanokgan.com`; the mini holds a warm standby reachable on the tailnet only. Notes also hold PDFs and spreadsheets, so storage growth matters (see "Storage").
+Personal notes as markdown pages in a folder, edited in the browser. Production runs on the Lenovo (cluster `extreme`, host `ubuntu-extreme`) at `silverbullet.kanokgan.com`; the mini holds a warm standby reachable on the tailnet only.
+
+**Since 2026-11-11 the Lenovo's SilverBullet opens the Obsidian vault** (`/srv/obsidian/vault`, kept in sync by Syncthing), as a second, lightweight editor next to the browser Obsidian ([obsidian.md](obsidian.md)); see "Editing the Obsidian vault". The mini's instance is unchanged: it has its own separate, empty space.
 
 ## What runs where
 
 | | Lenovo (`extreme`, primary) | Mac mini (`mini`, standby) |
 |---|---|---|
 | Image | `ghcr.io/silverbulletmd/silverbullet:2.12.1-slim` | same tag |
-| Data | host directory `/srv/silverbullet` (static PV/PVC `silverbullet-data`, `Retain`), mounted at `/data` | 20Gi `local-path` PVC `silverbullet-data` on the Lima VM disk |
+| Data | the Obsidian vault, host directory `/srv/obsidian/vault` (static PV/PVC `silverbullet-vault`, `Retain`), mounted at `/data` | 20Gi `local-path` PVC `silverbullet-data` on the Lima VM disk |
 | Tailscale (debug, tailnet only) | sidecar `silverbullet-ubuntu-extreme`: `https://silverbullet-ubuntu-extreme.dove-komodo.ts.net` | sidecar `silverbullet-macos-mini`: `https://silverbullet-macos-mini.dove-komodo.ts.net` |
 | Public | `silverbullet.kanokgan.com` via tunnel `ubuntu-extreme` (`cloudflared` on the host), service `http://localhost:30300` -> NodePort Service `silverbullet-nodeport` | none |
 | Login | SilverBullet's own, `SB_USER` (`username:password`) from `silverbullet-auth.sops.yaml` | same mechanism, own secret |
@@ -17,6 +19,19 @@ Manifests: `apps/base/silverbullet/`, `apps/extreme/silverbullet/`, `apps/mini/s
 Access decisions: no Cloudflare Access in front, only SilverBullet's own login (owner's decision, 2026-10-25); Cloudflare terminates TLS and can see the traffic, as for Actual and Immich. The work laptop reaches it through the public hostname (the company allows `*.kanokgan.com`). The password therefore protects notes on the open internet: use a long random one. SilverBullet locks an account after repeated failures (`SB_LOCKOUT_LIMIT`, default 10 tries, then 60 s).
 
 Licensing (checked 2026-10-25): the server is MIT licensed and free. The SilverBullet+ desktop app is free for personal use, and its author asks for payment (about $50 a year per person) for work use; it is an honor system. Decision: the work laptop uses the browser only, no desktop app, so no license is needed and no copy of the notes is kept there.
+
+## Editing the Obsidian vault
+
+Why: the work laptop can use a browser only, and SilverBullet is a plain web page (faster and lighter than the streamed Obsidian desktop). Both editors open the same folder, and Syncthing carries every change to the owner's other devices ([syncthing.md](syncthing.md)).
+
+Rules:
+- **One editor per note at a time.** SilverBullet, the browser Obsidian and Syncthing all write the same files. Close the Obsidian tab (or just do not touch the same note) while editing in SilverBullet. Both editors pick up outside changes, but a simultaneous edit loses one version.
+- **SilverBullet adds its own files to the vault.** It may create pages and folders in the space root (for example a `Library/` folder, config or index pages) that Syncthing then copies to every device. After the first start run `ls -la /srv/obsidian/vault` on the Lenovo, compare with the list before, and add what you do not want shared to the vault's `.stignore` (Syncthing admin page, folder, Ignore Patterns). The `.stignore` of the Lenovo's folder is only seeded once, so edits there are kept. The first start has not been done yet: record here what appeared.
+- **Obsidian-only syntax does not render.** Wikilinks and plain markdown work; plugins such as Dataview, Canvas and some callouts show as raw text. Do not "fix" such notes from SilverBullet.
+- **Size.** SilverBullet's browser client keeps a local copy of the space for offline use (verify in the docs). The vault is about 2.8 GB with 10,000+ files, so the first load on a new browser can be slow. If it is unusable, say so here and drop this setup rather than trimming the vault.
+- Access is unchanged: SilverBullet's own login at `silverbullet.kanokgan.com`, no Cloudflare Access. This now exposes the personal vault behind one password, where the browser Obsidian sits behind Cloudflare Access plus basic auth. Use a long random password, and consider putting Cloudflare Access in front of this name too (owner's decision, still open).
+
+Rollback: revert the commit. `/srv/silverbullet` (the old space) is kept on disk, and the vault is not touched by the switch.
 
 ## Server mode
 
@@ -71,11 +86,13 @@ Then open the tailnet address, log in, create a page, and check the file on disk
 
 ## Storage
 
-- Notes live on the Lenovo's NVMe (about 400 GB free after Immich, 2026-10-25). `hostPath` has no quota: the declared 100Gi is only a label. Watch `df -h /srv` and `du -sh /srv/silverbullet`.
+- The Lenovo's SilverBullet shares the vault's storage with Obsidian and Syncthing (about 400 GB free on the NVMe after Immich, 2026-10-25). `hostPath` has no quota: the declared 30Gi is only a label. Watch `df -h /srv` and `du -sh /srv/obsidian/vault`. The old space `/srv/silverbullet` stays on disk, unused.
 - Keep **meeting recordings out of the notes**. Videos are large and SilverBullet's browser client keeps a local copy of the space for offline use (verify in the docs before relying on it), so large files slow every device. Put recordings on the NAS and link to them from a page. Revisit if PDFs and spreadsheets alone grow past about 50 GB.
 - The Lenovo storage plan (second NVMe, LVM extend) is in `hosts/ubuntu-extreme/README.md`.
 
 ## Backup and restore
+
+**Gap since 2026-11-11:** the job below still copies the OLD space `/srv/silverbullet`, which SilverBullet no longer uses, so it protects nothing new. The vault is protected by the other devices' copies and Syncthing versions only ([obsidian.md](obsidian.md), "Backup and restore"). Open decision: point this job at `/srv/obsidian/vault` (one-way copy, never deletes on the NAS) or retire it.
 
 Nightly at 04:30 a systemd timer runs `silverbullet-nas-sync.sh`, which copies `/srv/silverbullet` to the NAS folder `/ZionLabs/SilverBullet/Backup` over SFTP on Tailscale. One way, never deletes on the NAS; the NAS snapshots on `ZionLabs` cover accidental changes. Files: `hosts/ubuntu-extreme/backup/silverbullet-nas-sync.*`.
 
