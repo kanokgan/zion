@@ -74,9 +74,6 @@ spec:
             # Listen on the pod only; reached through auth-proxy (and the Tailscale sidecar in the overlay).
             - name: PORT
               value: "8080"
-            # Syncthing's own folders inside the vault: do not watch or index them.
-            - name: IGNORED_PATHS
-              value: ".stversions/,.stfolder/"
             # WS_ORIGINS (the hostnames this instance is served from) is set in the overlay.
           ports:
             - name: ignis
@@ -103,10 +100,11 @@ spec:
               cpu: "1"
               memory: 1Gi
           volumeMounts:
-            # Ignis opens every subfolder of /vaults as a vault; ours is called "vault".
+            # Ignis opens every subfolder of /vaults as a vault. The Syncthing folder (vault/) holds the vault Zion/
+            # plus Syncthing's and SilverBullet's own files, so only Zion/ is mounted: the vault is called "Zion".
             - name: data
-              mountPath: /vaults/vault
-              subPath: vault
+              mountPath: /vaults/Zion
+              subPath: vault/Zion
             # Ignis settings, server plugin config and tokens.
             - name: data
               mountPath: /app/data

@@ -2,7 +2,7 @@
 
 Obsidian's own interface, run as a web app in the browser with [Ignis](https://github.com/Nystik-gh/ignis): a small Node server reads and writes the vault on the Lenovo, and the Obsidian UI runs in the browser tab. It exists because the work laptop blocks installing apps, so a browser is the only way in. Personal vault only.
 
-**Status: switching to Ignis (2026-11-13).** From 2026-10-25 to 2026-11-13 this was the linuxserver image: the Obsidian desktop app streamed as a remote desktop (Selkies). It was replaced because a remote desktop in a browser tab keeps colliding with the browser: shortcuts such as Ctrl/Cmd+W closed the browser tab instead of the Obsidian tab, there was typing latency, and the clipboard went through a relay. Alternatives looked at: SilverBullet (already on the vault, but not Obsidian), Browsidian (a basic editor, no license, no image, no login).
+**Status: live on Ignis since 2026-11-13.** From 2026-10-25 to 2026-11-13 this was the linuxserver image: the Obsidian desktop app streamed as a remote desktop (Selkies). It was replaced because a remote desktop in a browser tab keeps colliding with the browser: shortcuts such as Ctrl/Cmd+W closed the browser tab instead of the Obsidian tab, there was typing latency, and the clipboard went through a relay. Alternatives looked at: SilverBullet (already on the vault, but not Obsidian), Browsidian (a basic editor, no license, no image, no login).
 
 Note: a browser never hands Ctrl/Cmd+W, T, N or Q to a page, so Ignis does not fix those keys by itself. Install the page as an app (Chrome/Edge: menu, "Install page as app", or Ignis's own install prompt) so it opens in its own window, and rebind Obsidian's "close tab" (Settings, Hotkeys) if it still collides.
 
@@ -11,7 +11,7 @@ Note: a browser never hands Ctrl/Cmd+W, T, N or Q to a page, so Ignis does not f
 | | Lenovo (`extreme`) |
 |---|---|
 | Image | `nobbe/ignis:0.9.0` (amd64 and arm64), which downloads and pins Obsidian 1.14.4 on first start; `caddy:2.11.9-alpine` as the basic-auth sidecar `auth-proxy` |
-| Data | host directory `/srv/obsidian` (static PV/PVC `obsidian-data`, `Retain`): `vault/` at `/vaults/vault` (the live vault, kept in sync by Syncthing), `ignis/data` at `/app/data` (Ignis settings), `ignis/app` at `/app/obsidian-app` (the downloaded Obsidian). `config/` is the old linuxserver settings, unused, to delete after the soak |
+| Data | host directory `/srv/obsidian` (static PV/PVC `obsidian-data`, `Retain`): `vault/Zion` at `/vaults/Zion` (the vault itself; `vault/` is the Syncthing folder, which also holds Syncthing's and SilverBullet's own files, so only `Zion/` is mounted), `ignis/data` at `/app/data` (Ignis settings), `ignis/app` at `/app/obsidian-app` (the downloaded Obsidian). `config/` is the old linuxserver settings, unused, to delete after the soak |
 | Login | Ignis has none. Public path: Cloudflare Access, then basic auth in `auth-proxy` (`CUSTOM_USER` and `BASIC_AUTH_HASH` from `obsidian-auth.sops.yaml`) |
 | Tailscale (debug, tailnet only) | sidecar `obsidian-ubuntu-extreme`: `https://obsidian-ubuntu-extreme.dove-komodo.ts.net`, straight to Ignis on 8080 (no basic auth; the tailnet is the access control) |
 | Public | `obsidian.kanokgan.com` via tunnel `ubuntu-extreme`, service `http://localhost:30320` -> NodePort Service `obsidian-nodeport` -> `auth-proxy` (3000) -> Ignis (8080) |
@@ -41,14 +41,14 @@ Ignis has **no login**: anyone who reaches port 8080 can read, change or delete 
    - `obsidian-auth.sops.yaml`: `CUSTOM_USER` (a username) and `BASIC_AUTH_HASH`, a bcrypt hash of a long random password. Make the hash on the Mac without the password landing in shell history: `htpasswd -nBC 12 "" | tr -d ':\n'` (it prompts twice; macOS ships `htpasswd`), then `sops apps/extreme/obsidian/obsidian-auth.sops.yaml` and paste it as the value. Keep the password in your password manager.
    - `tailscale-auth.sops.yaml`: a Tailscale auth key (not ephemeral).
 4. **Check, commit, push:** `kubectl kustomize apps/extreme > /dev/null && echo ok`.
-5. **Test on the tailnet name** `https://obsidian-ubuntu-extreme.dove-komodo.ts.net`: the first start downloads Obsidian (a minute or two), then the vault `vault` opens.
+5. **Test on the tailnet name** `https://obsidian-ubuntu-extreme.dove-komodo.ts.net`: the first start downloads Obsidian (a minute or two), then the vault `Zion` opens. If Ignis shows an empty vault, `vault/Zion` does not exist yet (Syncthing has not finished) and the kubelet created it empty: wait for Syncthing, then restart the pod.
 6. **Cloudflare Access first, then the route** (already in place; for a rebuild): in Cloudflare Zero Trust, Access, Applications, a self-hosted application for `obsidian.kanokgan.com` with one policy, Allow, Emails, your own address. Only then the public hostname `obsidian.kanokgan.com` -> `http://localhost:30320` on the tunnel `ubuntu-extreme`. Test in a private window: Cloudflare login, then the basic-auth prompt, then Obsidian. Repeat after any change to the application or the tunnel.
 
 ## Switch from linuxserver to Ignis (2026-11-13)
 
 Risk: Ignis opens the live vault, which Syncthing copies to every device. A bad write reaches all of them. Safety net: Syncthing's staggered versions on the Lenovo and the copies on the other devices; check that at least one other device is in sync before starting. The switch itself is a short outage (the old pod stops, then Ignis starts and downloads Obsidian).
 
-1. Prepare on the Lenovo: the `ignis` directories from Setup step 1 (only the two new ones are missing), and check the inotify limit, since Ignis, Syncthing and SilverBullet all watch the same 10,000+ files as the same user: `cat /proc/sys/fs/inotify/max_user_watches` (fine if it is well above 100000).
+1. Prepare on the Lenovo: the `ignis` directories from Setup step 1 (only the two new ones are missing), and check the inotify limit, since Ignis, Syncthing and SilverBullet all watch the same files as the same user (about 2,600 files on 2026-11-13): `cat /proc/sys/fs/inotify/max_user_watches` (fine if it is well above 100000).
 2. Add `BASIC_AUTH_HASH` to `obsidian-auth.sops.yaml` (Setup step 3). Remove `PASSWORD` at the same time; nothing reads it any more.
 3. Commit the manifests and the secret together, push. Flux applies; `Recreate` stops the linuxserver pod before Ignis starts.
 4. Verify (below). Edit a test note in the browser and see it on another device; edit on another device and see it in the browser.
@@ -88,7 +88,7 @@ Versions live in the `images:` block of `apps/extreme/obsidian/kustomization.yam
 
 ## Open items
 
-- Do the switch above; record the date and how the hotkeys behave with the page installed as an app.
+- Switch done 2026-11-13 and working. Record how the hotkeys behave with the page installed as an app. First deploy mounted the whole Syncthing folder, which made Ignis create a stray `.obsidian/` at the Syncthing folder's root (removed after the mount was narrowed to `Zion/`).
 - Check that "Install page as app" works with basic auth in front. If the browser cannot fetch the web app manifest, exempt that one path from basic auth in the Caddyfile (it is still behind Cloudflare Access).
 - Decide whether a nightly NAS copy of the vault is needed on top of the other devices' copies.
 - Restore test (resync a vault from the other devices into an empty folder).
