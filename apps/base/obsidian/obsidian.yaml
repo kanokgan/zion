@@ -1,11 +1,40 @@
 # apps/base/obsidian/obsidian.yaml
-# The real Obsidian desktop app, streamed to the browser (linuxserver image, Selkies). Used from the work laptop,
-# where installing Obsidian is blocked. Phase 1 (trial): it runs on a COPY of the vault; the volume `data` is
-# defined in the overlay.
+# Obsidian in the browser with Ignis (https://github.com/Nystik-gh/ignis): the real Obsidian UI runs as a web app in
+# the browser, and a small Node server reads and writes the vault on disk. Not a remote desktop, so typing is local.
+# Used from the work laptop, where installing Obsidian is blocked. Replaced the linuxserver (Selkies) remote desktop
+# on 2026-11-13 (docs/services/obsidian.md).
 #
-# SECURITY: the web page includes a terminal with passwordless sudo, so anyone who reaches it is root inside the
-# container and can read and change the whole vault. The built-in basic auth (CUSTOM_USER / PASSWORD) is only a
-# second layer: the public hostname must be behind Cloudflare Access (docs/services/obsidian.md).
+# Ignis downloads Obsidian on first start (the version is pinned by the Ignis release) and keeps it in
+# /app/obsidian-app. The volume `data` is defined in the overlay; it must hold the subfolders vault/, ignis/data and
+# ignis/app.
+#
+# SECURITY: Ignis has NO login of its own; whoever reaches port 8080 can read and write the whole vault. So port
+# 8080 is never exposed: the Service points at the `auth-proxy` sidecar (Caddy, basic auth) on port 3000, and the
+# public hostname must also be behind Cloudflare Access. The NodePort listens on every interface of the node (LAN
+# included), which is why the basic-auth layer stays.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-proxy
+  namespace: obsidian
+  labels:
+    app.kubernetes.io/name: obsidian
+    app.kubernetes.io/instance: auth-proxy
+data:
+  Caddyfile: |
+    {
+      admin off
+      auto_https off
+    }
+
+    :3000 {
+      basic_auth {
+        {$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
+      }
+      # WebSockets (Ignis pushes vault changes over one) are proxied as is.
+      reverse_proxy 127.0.0.1:8080
+    }
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,6 +45,7 @@ metadata:
     app.kubernetes.io/instance: obsidian
 spec:
   replicas: 1
+  # Recreate: the old pod is gone before the new one opens the vault (one writer at a time).
   strategy:
     type: Recreate
   selector:
@@ -29,69 +59,131 @@ spec:
         app.kubernetes.io/part-of: zion-lab
     spec:
       containers:
-        - name: obsidian
+        - name: ignis
           # Tag pinned per cluster in the overlay's `images:` block (upgrade runbook: docs/services/obsidian.md).
-          image: lscr.io/linuxserver/obsidian
+          image: nobbe/ignis
           imagePullPolicy: IfNotPresent
           env:
+            # Files in the vault are written as this user (the owner of /srv/obsidian on the host).
             - name: PUID
               value: "1000"
             - name: PGID
               value: "1000"
             - name: TZ
               value: Asia/Bangkok
-            # The Lenovo has an NVIDIA GPU but none is passed to this pod: do not probe for one.
-            - name: AUTO_GPU
-              value: "false"
-            - name: CUSTOM_USER
+            # Listen on the pod only; reached through auth-proxy (and the Tailscale sidecar in the overlay).
+            - name: PORT
+              value: "8080"
+            # Syncthing's own folders inside the vault: do not watch or index them.
+            - name: IGNORED_PATHS
+              value: ".stversions/,.stfolder/"
+            # WS_ORIGINS (the hostnames this instance is served from) is set in the overlay.
+          ports:
+            - name: ignis
+              containerPort: 8080
+          # The first start downloads Obsidian (a minute or two): allow up to 5 minutes before liveness applies.
+          startupProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            # Ignis opens every subfolder of /vaults as a vault; ours is called "vault".
+            - name: data
+              mountPath: /vaults/vault
+              subPath: vault
+            # Ignis settings, server plugin config and tokens.
+            - name: data
+              mountPath: /app/data
+              subPath: ignis/data
+            # The downloaded Obsidian, kept so a restart does not download it again.
+            - name: data
+              mountPath: /app/obsidian-app
+              subPath: ignis/app
+        - name: auth-proxy
+          # Tag pinned per cluster in the overlay's `images:` block.
+          image: caddy
+          imagePullPolicy: IfNotPresent
+          command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+          env:
+            - name: BASIC_AUTH_USER
               valueFrom:
                 secretKeyRef:
                   name: obsidian-auth
                   key: CUSTOM_USER
-            - name: PASSWORD
+            # A bcrypt hash, never the password itself (docs/services/obsidian.md, "Secrets").
+            - name: BASIC_AUTH_HASH
               valueFrom:
                 secretKeyRef:
                   name: obsidian-auth
-                  key: PASSWORD
+                  key: BASIC_AUTH_HASH
+            - name: XDG_DATA_HOME
+              value: /data
+            - name: XDG_CONFIG_HOME
+              value: /config
           ports:
             - name: http
               containerPort: 3000
           readinessProbe:
             tcpSocket:
               port: 3000
-            initialDelaySeconds: 20
             periodSeconds: 10
           livenessProbe:
             tcpSocket:
               port: 3000
-            initialDelaySeconds: 60
             periodSeconds: 30
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+              # The caddy binary carries this file capability; without it in the bounding set exec fails.
+              add: ["NET_BIND_SERVICE"]
           resources:
             requests:
-              cpu: 250m
-              memory: 1Gi
+              cpu: 10m
+              memory: 32Mi
             limits:
-              cpu: "2"
-              memory: 3Gi
+              cpu: 200m
+              memory: 128Mi
           volumeMounts:
-            # /config is the container user's home (Obsidian settings); /vault is where the vault is opened from.
-            - name: data
+            - name: caddyfile
+              mountPath: /etc/caddy
+              readOnly: true
+            - name: caddy-state
+              mountPath: /data
+              subPath: data
+            - name: caddy-state
               mountPath: /config
               subPath: config
-            - name: data
-              mountPath: /vault
-              subPath: vault
-            # Electron needs a large /dev/shm.
-            - name: shm
-              mountPath: /dev/shm
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: obsidian-data
-        - name: shm
+        - name: caddyfile
+          configMap:
+            name: auth-proxy
+        - name: caddy-state
           emptyDir:
-            medium: Memory
-            sizeLimit: 1Gi
+            sizeLimit: 16Mi
 ---
 apiVersion: v1
 kind: Service
@@ -105,6 +197,7 @@ spec:
   selector:
     app.kubernetes.io/name: obsidian
   ports:
+    # auth-proxy, never Ignis's 8080 directly.
     - name: http
       port: 3000
       targetPort: 3000

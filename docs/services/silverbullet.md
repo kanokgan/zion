@@ -22,7 +22,7 @@ Licensing (checked 2026-10-25): the server is MIT licensed and free. The SilverB
 
 ## Editing the Obsidian vault
 
-Why: the work laptop can use a browser only, and SilverBullet is a plain web page (faster and lighter than the streamed Obsidian desktop). Both editors open the same folder, and Syncthing carries every change to the owner's other devices ([syncthing.md](syncthing.md)).
+Why: the work laptop can use a browser only, and SilverBullet is a plain web page (lighter than the browser Obsidian). Both editors open the same folder, and Syncthing carries every change to the owner's other devices ([syncthing.md](syncthing.md)).
 
 Rules:
 - **One editor per note at a time.** SilverBullet, the browser Obsidian and Syncthing all write the same files. Close the Obsidian tab (or just do not touch the same note) while editing in SilverBullet. Both editors pick up outside changes, but a simultaneous edit loses one version.

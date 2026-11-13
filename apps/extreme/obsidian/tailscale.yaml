@@ -1,6 +1,7 @@
 # apps/extreme/obsidian/tailscale.yaml
-# Tailscale sidecar support for Obsidian on the Lenovo: serve config (HTTPS on the tailnet name, proxied to
-# Obsidian on 127.0.0.1:3000) and a ServiceAccount that lets the sidecar keep its node identity in the Secret
+# Tailscale sidecar support for Obsidian on the Lenovo: serve config (HTTPS on the tailnet name, proxied straight to
+# Ignis on 127.0.0.1:8080, skipping basic auth: the tailnet is the access control here, and a path around the auth
+# proxy helps debugging) and a ServiceAccount that lets the sidecar keep its node identity in the Secret
 # obsidian-tailscale-state. The auth key is in tailscale-auth.sops.yaml.
 apiVersion: v1
 kind: ConfigMap
@@ -17,7 +18,7 @@ data:
       "TCP": { "443": { "HTTPS": true } },
       "Web": {
         "${TS_CERT_DOMAIN}:443": {
-          "Handlers": { "/": { "Proxy": "http://127.0.0.1:3000" } }
+          "Handlers": { "/": { "Proxy": "http://127.0.0.1:8080" } }
         }
       }
     }

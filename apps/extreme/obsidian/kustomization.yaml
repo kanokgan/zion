@@ -1,8 +1,9 @@
 # apps/extreme/obsidian/kustomization.yaml
-# Obsidian in the browser on the Lenovo (cluster `extreme`), phase 1: a trial on a COPY of the vault. Served at
-# https://obsidian.kanokgan.com (host cloudflared, tunnel ubuntu-extreme -> localhost:30320 -> nodeport.yaml, behind
-# Cloudflare Access) and, for debugging, at https://obsidian-ubuntu-extreme.dove-komodo.ts.net (Tailscale sidecar,
-# tailnet only). Built-in login is basic auth from obsidian-auth.sops.yaml. No mini standby.
+# Obsidian in the browser (Ignis) on the Lenovo (cluster `extreme`), on the live vault /srv/obsidian/vault that
+# Syncthing keeps in sync. Served at https://obsidian.kanokgan.com (host cloudflared, tunnel ubuntu-extreme ->
+# localhost:30320 -> nodeport.yaml -> auth-proxy, behind Cloudflare Access) and, for debugging, at
+# https://obsidian-ubuntu-extreme.dove-komodo.ts.net (Tailscale sidecar, tailnet only, straight to Ignis). Basic auth
+# for the public path comes from obsidian-auth.sops.yaml. No mini standby.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -12,10 +13,13 @@ resources:
   - tailscale.yaml
   - tailscale-auth.sops.yaml
   - obsidian-auth.sops.yaml
-# Obsidian image version: the ONE place to edit for an upgrade (runbook: docs/services/obsidian.md).
+# Image versions: the ONE place to edit for an upgrade (runbook: docs/services/obsidian.md). Each Ignis release pins
+# the Obsidian version it downloads.
 images:
-  - name: lscr.io/linuxserver/obsidian
-    newTag: 1.14.4
+  - name: nobbe/ignis
+    newTag: 0.9.0
+  - name: caddy
+    newTag: 2.11.9-alpine
 patches:
   - target:
       kind: Deployment
@@ -30,6 +34,11 @@ patches:
           spec:
             serviceAccountName: obsidian-tailscale
             containers:
+              - name: ignis
+                env:
+                  # The origins the vault-change WebSocket accepts (exact match, scheme included).
+                  - name: WS_ORIGINS
+                    value: https://obsidian.kanokgan.com,https://obsidian-ubuntu-extreme.dove-komodo.ts.net
               - name: tailscale
                 # Deliberate exception to "pin image versions" (same as the other apps): a backward-compatible
                 # networking client that should pick up security fixes.

@@ -1,8 +1,9 @@
 # apps/extreme/obsidian/data.yaml
-# Phase 1 (trial): the host directory /srv/obsidian on the Lenovo's NVMe, outside /var/lib/rancher so that removing
-# k3s never touches it. Subfolders: config/ (Obsidian's settings) and vault/ (a COPY of the vault; the original on
-# the NAS is only read). Bound statically to obsidian-data; Retain so deleting the claim never touches the files.
-# Create the directories first (docs/services/obsidian.md). The capacity is a label, not a quota.
+# The host directory /srv/obsidian on the Lenovo's NVMe, outside /var/lib/rancher so that removing k3s never touches
+# it. Subfolders: vault/ (the live vault, also mounted by Syncthing and SilverBullet), ignis/data (Ignis settings),
+# ignis/app (the downloaded Obsidian), and config/ (left over from the linuxserver image, unused since 2026-11-13).
+# Bound statically to obsidian-data; Retain so deleting the claim never touches the files. Create the directories
+# first (docs/services/obsidian.md). The capacity is a label, not a quota.
 apiVersion: v1
 kind: PersistentVolume
 metadata:
