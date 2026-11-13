@@ -18,6 +18,7 @@ Last updated: 2026-10-29
 | Obsidian in the browser | `extreme` (`obsidian.kanokgan.com`, behind Cloudflare Access) | The vault is copied by Syncthing to the owner's other devices; no NAS job yet | Not done | [obsidian.md](../services/obsidian.md) |
 | Syncthing | `extreme`, tailnet only; the Obsidian vault is joined and syncing | Config in `/srv/syncthing/config` is not backed up yet | Not done | [syncthing.md](../services/syncthing.md) |
 | Monitoring | `extreme` (stages 1 and 2 live) | Prometheus data is disposable, Grafana is stateless (ADR 0010) | n/a | [monitoring.md](../services/monitoring.md) |
+| GitHub mirror (backup of all GitHub repos, not a migrated service) | host timer on `ubuntu-extreme` (since 2026-11-13) | Bare mirrors with LFS, nightly to the NAS (05:00, ADR 0011) | Offline clone + `git lfs pull` from the NAS copy on the Mac, all 170 LFS objects present: 2026-11-13 | [github-mirror.md](../services/github-mirror.md) |
 | Plex, Jellyfin | native on the mini (ADR 0008) | Unknown: how they start, where config lives and how it is backed up are still to be recorded in [hosts/macos-mini/](../../hosts/macos-mini/README.md) | No | not in Kubernetes |
 
 Not a migration, but worth knowing: SilverBullet was found unsuitable (it needs plugins for basics) and is still running; whether to keep or remove it is decided after living with Obsidian for a while.
@@ -39,6 +40,7 @@ Found on `zion-old` and decided when it was wiped on 2026-10-17:
 | Plex and Jellyfin | accepted: native on the mini | 0008 |
 | Rebuild the Lenovo in place, clusters named after machines | accepted | 0009 |
 | Monitoring | accepted | 0010 |
+| GitHub backup as portable bare mirrors | accepted | 0011 |
 | Ingress / DNS pattern (Tailscale + kanokgan.com) | undecided (the pattern works today) | - |
 | NAS storage pattern | undecided | - |
 | Backup approach | undecided | - |

@@ -2,7 +2,7 @@
 
 A nightly backup of every repo owned by the `kanokgan` GitHub account, including all Git LFS objects, as plain bare repositories on the NAS. Each folder works on its own with `git` and `git-lfs`, offline, with no server: copy it anywhere, clone from it. Not a Kubernetes app: a systemd timer on the Lenovo, next to the other NAS jobs. Decision and alternatives: [ADR 0011](../decisions/0011-github-backup-as-bare-mirrors.md).
 
-Status: **installed 2026-11-13.** First run 2.5 minutes (17 repos, 1.5 GB, including LFS objects in five repos, not only `kanokgan-work`); second run 33 seconds; `rclone check` 0 differences over 720 files; timer enabled (first scheduled run 2026-11-14 05:00). The `No common hash found` ERROR line of `rclone check` is expected (SFTP, see the Immich job). Restore test still open (below).
+Status: **installed 2026-11-13.** First run 2.5 minutes (17 repos, 1.5 GB, including LFS objects in five repos, not only `kanokgan-work`); second run 33 seconds; `git fsck` clean on all 17 mirrors; `rclone check` 0 differences over 720 files; timer enabled (first scheduled run 2026-11-14 05:00). The `No common hash found` ERROR line of `rclone check` is expected (SFTP, see the Immich job). Restore test passed 2026-11-13 (below).
 
 ## What runs where
 
@@ -85,12 +85,18 @@ mkdir -p .git/lfs && cp -R ../kanokgan-work.git/lfs/objects .git/lfs/ && git lfs
 
 ## Restore test
 
-**Not done yet.** The mechanism was checked on 2026-11-13 with a throwaway repo on the Mac (bare mirror with `lfs/objects` inside, clone, `git lfs pull`: the real file came back). The real test, once the job has run:
+**Passed 2026-11-13** on the Mac (git-lfs 3.8.1), from the NAS copy of the first nightly-job output: `kanokgan-work.git` copied from the mounted share `/Volumes/ZionLabs/Git/GitHub/` (1.4 GB), cloned, `git lfs pull`: every LFS file listed with `*` (real content, not a pointer). `git lfs fetch --all` from the mirror: 170 objects in the clone, the same as the mirror.
 
-1. Copy `kanokgan-work.git` from the NAS to the Mac. Turn Wi-Fi off.
-2. Clone it and `git lfs pull` (step 2 above). Open one slide.
-3. Old versions too: `git lfs fetch --all`, then `find .git/lfs/objects -type f | wc -l` must equal the count in the mirror.
-4. Record the date here and in [docs/migration/README.md](../migration/README.md).
+To repeat it (yearly, or after a git-lfs upgrade):
+```sh
+mkdir -p ~/restore-test
+cp -R /Volumes/ZionLabs/Git/GitHub/kanokgan-work.git ~/restore-test/
+cd ~/restore-test && git clone kanokgan-work.git kanokgan-work && cd kanokgan-work && git lfs pull
+git lfs ls-files | head
+git lfs fetch --all && find .git/lfs/objects -type f | wc -l
+cd ~ && rm -rf ~/restore-test
+```
+Every line of `ls-files` must show `*`, and the count must equal `find <mirror>/lfs/objects -type f | wc -l`. Paste the commands without comments: zsh does not treat `#` as a comment when typing commands. Record the date here and in [docs/migration/README.md](../migration/README.md).
 
 ## Token rotation
 
@@ -98,6 +104,5 @@ Create a new token with the same settings (Setup, step 1), replace the file's co
 
 ## Open items
 
-- Restore test (above).
 - No alert when a night fails, and none when the token expires, until the backup-job metrics exist ([monitoring.md](monitoring.md), stage 3). Until then: the journal, and a calendar reminder for the token.
 - GitLab repos (small, left out on 2026-11-13). The script would need a second source list and token.
