@@ -2,7 +2,7 @@
 
 A nightly backup of every repo owned by the `kanokgan` GitHub account, including all Git LFS objects, as plain bare repositories on the NAS. Each folder works on its own with `git` and `git-lfs`, offline, with no server: copy it anywhere, clone from it. Not a Kubernetes app: a systemd timer on the Lenovo, next to the other NAS jobs. Decision and alternatives: [ADR 0011](../decisions/0011-github-backup-as-bare-mirrors.md).
 
-Status: **written, not installed yet** (2026-11-13).
+Status: **installed 2026-11-13.** First run 2.5 minutes (17 repos, 1.5 GB, including LFS objects in five repos, not only `kanokgan-work`); second run 33 seconds; `rclone check` 0 differences over 720 files; timer enabled (first scheduled run 2026-11-14 05:00). The `No common hash found` ERROR line of `rclone check` is expected (SFTP, see the Immich job). Restore test still open (below).
 
 ## What runs where
 
@@ -12,7 +12,7 @@ Status: **written, not installed yet** (2026-11-13).
 | Working copy | `/srv/git-mirror/<repo>.git` on the Lenovo's NVMe: bare repos, branches and tags only, LFS objects in `<repo>.git/lfs/objects/` |
 | Backup | NAS `/ZionLabs/Git/GitHub/<repo>.git`, `rclone sync` over SFTP on Tailscale (remote `zion-nas`, account `sc-zion`); history from the Synology snapshots on `ZionLabs` |
 | Credential | fine-grained GitHub token, read-only, in `~kanokgan/.config/github-mirror/token` (mode 0600, outside Git) |
-| Size (2026-11-13) | 17 repos, about 0.3 GB of git data plus about 1.2 GB of LFS (all in `kanokgan-work`, 170 objects) |
+| Size (2026-11-13) | 17 repos, 1.5 GB on disk: about 0.3 GB of git data plus about 1.2 GB of LFS (almost all in `kanokgan-work`, 170 objects; one object each in four other repos) |
 
 What the script does, each night:
 1. Lists the account's repos through the GitHub API, so new repos are picked up automatically.
@@ -58,8 +58,8 @@ systemctl list-timers github-mirror.timer
 journalctl -u github-mirror -n 50 --no-pager
 du -sh /srv/git-mirror; ls /srv/git-mirror
 # every mirror is a consistent repo
-for d in /srv/git-mirror/*.git; do git -C "$d" fsck --connectivity-only --no-progress -q || echo "FSCK FAILED: $d"; done
-# LFS objects present (170 on 2026-11-13)
+for d in /srv/git-mirror/*.git; do git -C "$d" fsck --connectivity-only --no-progress 2>&1 | grep -v '^dangling' | grep . && echo "^^ $d"; done; echo fsck finished
+# LFS objects present (170 on 2026-11-13; the fetch log says 171 because two pointers share one object)
 find /srv/git-mirror/kanokgan-work.git/lfs/objects -type f | wc -l
 # the NAS holds the same files (as kanokgan, no sudo)
 rclone check /srv/git-mirror zion-nas:/ZionLabs/Git/GitHub --one-way
