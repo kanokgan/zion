@@ -1,0 +1,23 @@
+# hosts/ubuntu-extreme/backup/github-mirror.service
+# Install as /etc/systemd/system/github-mirror.service (the script goes to /usr/local/sbin/). Runs as the owner's user,
+# not root: the mirrors are created by the job itself, and the token, the rclone config and the SFTP key are read from
+# the owner's home. Output goes to the journal:
+#   journalctl -u github-mirror -n 50
+[Unit]
+Description=Mirror all GitHub repos (with Git LFS) and copy them to the Synology
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=kanokgan
+Group=kanokgan
+ExecStart=/usr/local/sbin/github-mirror.sh
+Nice=10
+IOSchedulingClass=idle
+# Hardening: the whole filesystem is read-only for this job except the mirror folder and the lock file. If a run
+# fails with "Read-only file system", the path in the error belongs in ReadWritePaths.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/srv/git-mirror /run/lock

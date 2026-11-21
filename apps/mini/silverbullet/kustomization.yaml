@@ -1,10 +1,14 @@
 # apps/mini/silverbullet/kustomization.yaml
 # SilverBullet on the mini: a warm standby of the Lenovo's instance (ADR 0004 pattern), NOT where notes are
-# written. Tailnet only, at https://silverbullet-macos-mini.dove-komodo.ts.net (Tailscale sidecar). No NodePort and
+# written. Tailnet only, at https://macos-mini-silverbullet.dove-komodo.ts.net (Tailscale sidecar). No NodePort and
 # no tunnel route: silverbullet.kanokgan.com is served by the Lenovo (tunnel ubuntu-extreme). Its data is refreshed
 # from the NAS backup by hand; anything written here is overwritten at the next refresh.
+# PARKED since 2026-11-21: scaled to 0, volume and Tailscale identity kept. Set the count to 1 to bring it back.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+replicas:
+  - name: silverbullet
+    count: 0
 resources:
   - ../../base/silverbullet
   - data.yaml
@@ -41,7 +45,7 @@ patches:
                         name: tailscale-auth
                         key: TS_AUTHKEY
                   - name: TS_HOSTNAME
-                    value: silverbullet-macos-mini
+                    value: macos-mini-silverbullet
                   - name: TS_KUBE_SECRET
                     value: silverbullet-tailscale-state
                   - name: TS_USERSPACE

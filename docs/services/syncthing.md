@@ -9,7 +9,7 @@ The Lenovo as one more device in the owner's Syncthing network. Its job today: k
 | Image | `syncthing/syncthing:2.1.7` (amd64 and arm64 published) |
 | Config | host directory `/srv/syncthing/config` (static PV/PVC `syncthing-config`, `Retain`), mounted at `/var/syncthing/config`: the device identity, device list and folder list |
 | Data | the Obsidian vault, host directory `/srv/obsidian/vault` (PV/PVC `syncthing-vault`), mounted at `/sync/obsidian-vault`. The browser Obsidian mounts the same folder |
-| Access | tailnet only: admin page `https://syncthing-ubuntu-extreme.dove-komodo.ts.net`, sync port `tcp://syncthing-ubuntu-extreme.dove-komodo.ts.net:22000` (Tailscale sidecar, `TCPForward`). No public hostname, no NodePort |
+| Access | tailnet only: admin page `https://ubuntu-extreme-syncthing.dove-komodo.ts.net`, sync port `tcp://ubuntu-extreme-syncthing.dove-komodo.ts.net:22000` (Tailscale sidecar, `TCPForward`). No public hostname, no NodePort |
 | Other devices | those on the tailnet connect to the address above; those that cannot (for example a work phone that blocks Tailscale) reach the Lenovo through Syncthing's relays, which need only outbound connections |
 | Mini | none |
 
@@ -31,7 +31,7 @@ Manifests: `apps/base/syncthing/`, `apps/extreme/syncthing/`. The `.stignore` of
    ```
 2. Secret: `apps/extreme/syncthing/tailscale-auth.sops.yaml` holds a Tailscale auth key (placeholder until you replace it; same method as the other apps: edit the plain placeholder, `sops --encrypt --in-place <file>` once, `sops <file>` for later changes; never push a placeholder).
 3. Check, commit and push: `kubectl kustomize apps/extreme > /dev/null && echo ok`.
-4. First visit to `https://syncthing-ubuntu-extreme.dove-komodo.ts.net`:
+4. First visit to `https://ubuntu-extreme-syncthing.dove-komodo.ts.net`:
    - Actions, Settings, GUI: set a user name and a long password.
    - Actions, Settings, General: Default Folder Path `/sync`.
    - Actions, Settings, Connections: leave global discovery and relays on (the relays are how some devices reach it). NAT traversal can be turned off: it does nothing inside a cluster.
@@ -46,7 +46,7 @@ The vault on the Lenovo started as a one-off copy that Obsidian had opened, so i
    find /srv/obsidian/vault -mindepth 1 -delete
    kubectl --context extreme -n syncthing rollout restart deploy/syncthing    # seeds .stignore again
    ```
-2. On one always-on device of the network (the NAS, or your main hub): Add Remote Device with the Lenovo's ID. Under Advanced, Addresses: `tcp://syncthing-ubuntu-extreme.dove-komodo.ts.net:22000, dynamic`. Do not make it an Introducer. Share the vault folder with it, and only that folder.
+2. On one always-on device of the network (the NAS, or your main hub): Add Remote Device with the Lenovo's ID. Under Advanced, Addresses: `tcp://ubuntu-extreme-syncthing.dove-komodo.ts.net:22000, dynamic`. Do not make it an Introducer. Share the vault folder with it, and only that folder.
 3. On the Lenovo: accept the device, then accept the folder with the path `/sync/obsidian-vault`. Folder Type stays Send & Receive. Edit the folder, File Versioning **Staggered** (for example keep 30 days). Versions are kept in `.stversions` inside the folder.
 4. Wait until the folder is "Up to Date" (about 2.8 GB).
 5. Restart the browser Obsidian so it reopens the vault: `kubectl --context extreme -n obsidian rollout restart deploy/obsidian`.

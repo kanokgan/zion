@@ -25,11 +25,14 @@ The mini took over production early: the Lenovo is being wiped and rebuilt from 
 
 ## Update 2026-10-21
 Immich went back to the Lenovo (cluster `extreme`, restored from the mini's dump on 2026-10-20; `immich.kanokgan.com` moved to the `ubuntu-extreme` tunnel). What this ADR said and what is true now:
-- **Naming:** the mini's cluster is called `mini`, not `zion-standby` (ADR 0009, renamed 2026-10-20). Its Tailscale sidecar is `immich-macos-mini`, not `immich-standby`.
-- **The mini is not a working standby yet.** It runs Immich at 1 replica, on purpose, reachable only at `https://immich-macos-mini.dove-komodo.ts.net`, on the database and library as they were at the cutover. It takes no uploads, and nothing refreshes it. There is no job from the mini to the NAS (the planned mini to NAS `rclone` job was never installed); the Lenovo's nightly job writes the NAS path now ([hosts/ubuntu-extreme/backup/](../../hosts/ubuntu-extreme/backup/README.md)).
+- **Naming:** the mini's cluster is called `mini`, not `zion-standby` (ADR 0009, renamed 2026-10-20). Its Tailscale sidecar is `macos-mini-immich`, not `immich-standby`.
+- **The mini is not a working standby yet.** It runs Immich at 1 replica, on purpose, reachable only at `https://macos-mini-immich.dove-komodo.ts.net`, on the database and library as they were at the cutover. It takes no uploads, and nothing refreshes it. There is no job from the mini to the NAS (the planned mini to NAS `rclone` job was never installed); the Lenovo's nightly job writes the NAS path now ([hosts/ubuntu-extreme/backup/](../../hosts/ubuntu-extreme/backup/README.md)).
 - **Version gap:** the Lenovo runs Immich v3.3.4, the mini v3.2.4. A dump made by the Lenovo cannot be restored onto the older image, so the mini has to be upgraded before it can take a fresh restore.
 - **Still to build before relying on it:** a refresh procedure (NAS to the mini's NVMe in the right direction, then the DB restore on a clean Postgres volume), a decision on public traffic (a `cloudflared` connector already runs on the mini for Plex and Jellyfin, tunnel `macos-mini`), and a tested failover and failback. The failover and failback outline below is unchanged and untested in this direction.
 - The direction of the library sync is reversed relative to the original design: Lenovo to NAS, and only a deliberate restore goes NAS to mini.
+
+## Update 2026-11-21
+The mini's Immich is parked: every Immich Deployment on `mini` is at 0 replicas (`replicas:` in `apps/mini/immich/kustomization.yaml`), and so are the mini's Actual and SilverBullet. A routine restart left the server in `ContainerCreating` (cause not investigated yet; the library is a `hostPath` on the external NVMe shared into the Lima VM, the first thing to check). Volumes, Secrets and the Tailscale identity are kept, so it can be brought back. The "1 replica, on purpose" line in the 2026-10-21 update no longer holds. This ADR stays accepted; the refresh procedure is still the work that would make the mini a standby.
 
 ## Failover and failback (outline, to be tested before it is relied on)
 1. Stop Immich on the Lenovo if it is up.

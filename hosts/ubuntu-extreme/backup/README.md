@@ -1,13 +1,14 @@
 # NAS backup jobs (Lenovo to Synology)
 
-Two systemd timers copy host directories to the NAS with `rclone copy` over SFTP on Tailscale, both with the same rclone remote `zion-nas`:
+Three systemd timers copy data to the NAS over SFTP on Tailscale, all with the same rclone remote `zion-nas`:
 
 | Timer | Copies | To | Doc |
 |---|---|---|---|
-| `immich-nas-sync.timer`, 04:00 | `/srv/immich` | `/ZionLabs/Immich/Backup` | this file |
-| `silverbullet-nas-sync.timer`, 04:30 | `/srv/silverbullet` | `/ZionLabs/SilverBullet/Backup` | [silverbullet.md](../../../docs/services/silverbullet.md), "Backup and restore" |
+| `immich-nas-sync.timer`, 04:00 | `/srv/immich` (`rclone copy`, as root) | `/ZionLabs/Immich/Backup` | this file |
+| `silverbullet-nas-sync.timer`, 04:30 | `/srv/silverbullet` (`rclone copy`, as root) | `/ZionLabs/SilverBullet/Backup` | [silverbullet.md](../../../docs/services/silverbullet.md), "Backup and restore" |
+| `github-mirror.timer`, 05:00 | every GitHub repo with its LFS objects, mirrored into `/srv/git-mirror` first (`rclone sync`, as `kanokgan`) | `/ZionLabs/Git/GitHub` | [github-mirror.md](../../../docs/services/github-mirror.md), [ADR 0011](../../../docs/decisions/0011-github-backup-as-bare-mirrors.md) |
 
-The rest of this file covers the Immich job. The SilverBullet job uses the same account, key and install steps (its scripts and units are `silverbullet-nas-sync.*` here).
+The rest of this file covers the Immich job. The SilverBullet job uses the same account, key and install steps (its scripts and units are `silverbullet-nas-sync.*` here). The GitHub mirror differs (its own user, a GitHub token, `sync` instead of `copy`); its setup is in its own doc.
 
 ## Immich library backup
 

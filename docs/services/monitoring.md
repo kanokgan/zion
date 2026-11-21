@@ -8,7 +8,7 @@ Prometheus, Grafana and Alertmanager, designed in [ADR 0010](../decisions/0010-m
 |---|---|---|
 | Stage | 2 (stack, alert rules, tailnet access and Telegram alerts live) | not started |
 | Prometheus | 15 days or 20 GB of data, 25Gi local-path volume | planned: small, 7 days |
-| Grafana | yes (stateless); admin login from the SOPS secret `grafana-admin`; tailnet only at `https://grafana-ubuntu-extreme.dove-komodo.ts.net` (Tailscale sidecar) | no: queried from the Lenovo's Grafana |
+| Grafana | yes (stateless); admin login from the SOPS secret `grafana-admin`; tailnet only at `https://ubuntu-extreme-grafana.dove-komodo.ts.net` (Tailscale sidecar) | no: queried from the Lenovo's Grafana |
 | Alertmanager | yes; sends to Telegram (config in the SOPS secret `alertmanager-config`) | no |
 | Exporters | node-exporter, kube-state-metrics | the same, plus `node_exporter` on the macOS host |
 
@@ -16,7 +16,7 @@ Manifests: `infrastructure/base/monitoring/` (namespace, chart repository), `inf
 
 ## Open it
 
-- Grafana: `https://grafana-ubuntu-extreme.dove-komodo.ts.net` from any tailnet device; user `admin`, password from the password manager (the value in `grafana-admin`).
+- Grafana: `https://ubuntu-extreme-grafana.dove-komodo.ts.net` from any tailnet device; user `admin`, password from the password manager (the value in `grafana-admin`).
 - Without the tailnet, from a machine with a kubeconfig for `extreme`:
   ```sh
   kubectl --context extreme -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80

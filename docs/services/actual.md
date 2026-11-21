@@ -1,14 +1,14 @@
 # Actual Budget
 
-Personal budgeting app used daily by family. Since 2026-10-17 production runs on the rebuilt Lenovo (cluster `extreme`, host `ubuntu-extreme`, ADR 0009) at `actual.kanokgan.com`. It ran on the Mac mini for the hours in between; the mini's copy is stale and, by the owner's choice (2026-10-21), is kept running at 1 replica at its tailnet name only. For debugging one specific instance there are tailnet-only names of the form `actual-<machine>.dove-komodo.ts.net`.
+Personal budgeting app used daily by family. Since 2026-10-17 production runs on the rebuilt Lenovo (cluster `extreme`, host `ubuntu-extreme`, ADR 0009) at `actual.kanokgan.com`. It ran on the Mac mini for the hours in between; the mini's copy is stale; it ran at 1 replica at its tailnet name only from 2026-10-21 and is parked at 0 since 2026-11-21. For debugging one specific instance there are tailnet-only names of the form `<machine>-actual.dove-komodo.ts.net`.
 
 ## What runs where
 
-| | Lenovo (`extreme`, production) | Mac mini (`mini`, previous production, stale copy kept running) |
+| | Lenovo (`extreme`, production) | Mac mini (`mini`, previous production, stale copy parked at 0 since 2026-11-21) |
 |---|---|---|
 | Image | `actualbudget/actual-server:26.10.0` | `actualbudget/actual-server:26.10.0` |
 | Data | 10Gi `local-path` PVC `actual-data`, mounted at `/data` | 10Gi `local-path` PVC `actual-data` on the Lima VM disk |
-| Tailscale (debug, tailnet only) | sidecar `actual-ubuntu-extreme`: `https://actual-ubuntu-extreme.dove-komodo.ts.net` | sidecar `actual-macos-mini` (renamed from `actual-standby` on 2026-10-18) |
+| Tailscale (debug, tailnet only) | sidecar `ubuntu-extreme-actual`: `https://ubuntu-extreme-actual.dove-komodo.ts.net` | sidecar `macos-mini-actual` (renamed from `actual-standby` on 2026-10-18) |
 | Public | `actual.kanokgan.com` via tunnel `ubuntu-extreme` (`cloudflared` on the host), service `http://localhost:30506` -> NodePort Service `actual-nodeport` (`apps/extreme/actual/nodeport.yaml`) | none: the route moved to the Lenovo's tunnel |
 | Config | env `ACTUAL_SERVER_FILES=/data`, `ACTUAL_PORT=5006`; no secrets other than the Tailscale auth key | same |
 
@@ -27,7 +27,7 @@ Optional later: a CronJob that copies `/data` to the NAS over SFTP on the LAN (n
 ## Restore test (done 2026-10-12, on the mini with disposable data)
 
 1. In the Lenovo's Actual: Settings, Export data. Keep the zip safe (it contains the budget).
-2. On `https://actual-macos-mini.dove-komodo.ts.net`: set a server password on first open, then import the budget from the zip.
+2. On `https://macos-mini-actual.dove-komodo.ts.net`: set a server password on first open, then import the budget from the zip.
 3. Check accounts, recent transactions and the balances against the Lenovo.
 4. Result: export from the Lenovo and import on the mini worked. This tested the manual export path, not an automated backup.
 
@@ -66,5 +66,5 @@ Rollback: revert the commit if the pod never became healthy. If data was migrate
 
 ## Open items
 
-- The mini's Actual is kept at 1 replica on purpose (decided 2026-10-21): it is a stale copy with its own data, so it does not conflict with the Lenovo's, but anything entered there is not synchronised and will be lost. Enter data only at `actual.kanokgan.com`. Scale it to 0 in `apps/mini/actual/kustomization.yaml` if it ever causes confusion.
+- The mini's Actual is parked at 0 replicas (2026-11-21; it ran at 1 from 2026-10-21). It is a stale copy with its own data, so it does not conflict with the Lenovo's, but anything entered there is not synchronised and will be lost. Enter data only at `actual.kanokgan.com`. To bring it back, set the count to 1 in `apps/mini/actual/kustomization.yaml`.
 - Backup is a manual export to the NAS. Automating it with a CronJob or a host job is optional (backup ADR).

@@ -1,7 +1,7 @@
 # apps/extreme/silverbullet/kustomization.yaml
 # SilverBullet on the Lenovo (cluster `extreme`): served at https://silverbullet.kanokgan.com (host cloudflared,
 # tunnel ubuntu-extreme -> localhost:30300 -> nodeport.yaml) and, for debugging this one instance, at
-# https://silverbullet-ubuntu-extreme.dove-komodo.ts.net (Tailscale sidecar, tailnet only). Login is SilverBullet's
+# https://ubuntu-extreme-silverbullet.dove-komodo.ts.net (Tailscale sidecar, tailnet only). Login is SilverBullet's
 # own (SB_USER from silverbullet-auth.sops.yaml); there is no Cloudflare Access in front.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -29,6 +29,14 @@ patches:
         template:
           spec:
             serviceAccountName: silverbullet-tailscale
+            # The space is the Obsidian vault (data.yaml), not the base's `silverbullet-data` claim.
+            volumes:
+              - name: data
+                persistentVolumeClaim:
+                  claimName: silverbullet-vault
+              - name: tailscale-config
+                configMap:
+                  name: tailscale-config
             containers:
               - name: tailscale
                 # Deliberate exception to "pin image versions" (same as Immich and Actual): a backward-compatible
@@ -42,7 +50,7 @@ patches:
                         name: tailscale-auth
                         key: TS_AUTHKEY
                   - name: TS_HOSTNAME
-                    value: silverbullet-ubuntu-extreme
+                    value: ubuntu-extreme-silverbullet
                   - name: TS_KUBE_SECRET
                     value: silverbullet-tailscale-state
                   - name: TS_USERSPACE
@@ -59,7 +67,3 @@ patches:
                 volumeMounts:
                   - name: tailscale-config
                     mountPath: /config
-            volumes:
-              - name: tailscale-config
-                configMap:
-                  name: tailscale-config

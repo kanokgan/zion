@@ -1,0 +1,13 @@
+# hosts/ubuntu-extreme/backup/github-mirror.timer
+# Install as /etc/systemd/system/github-mirror.timer. 05:00 every night (the machine's timezone is Asia/Bangkok),
+# after the Immich (04:00) and SilverBullet (04:30) copies. Persistent: a run missed while the machine was off happens
+# at the next boot.
+[Unit]
+Description=Nightly GitHub mirror to the Synology
+
+[Timer]
+OnCalendar=*-*-* 05:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

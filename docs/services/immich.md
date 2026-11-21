@@ -1,12 +1,12 @@
 # Immich
 
-Photo library used daily by family. Since 2026-10-21 the Lenovo (cluster `extreme`) serves `immich.kanokgan.com` (database restored 2026-10-20, hostname moved to the `ubuntu-extreme` tunnel; ADR 0009). Between 2026-10-17 and then the Mac mini (`mini`) served it while the Lenovo was rebuilt from this repo. The mini keeps its own old copy, running on purpose at its Tailscale name only (see "What runs where"); it takes no uploads. The old Lenovo cluster (`zion-old`) was wiped on 2026-10-17, so its library and databases are gone: the NAS, the mini's NVMe and the Lenovo's `/srv/immich` hold the data. Immich is the one service that must not go down.
+Photo library used daily by family. Since 2026-10-21 the Lenovo (cluster `extreme`) serves `immich.kanokgan.com` (database restored 2026-10-20, hostname moved to the `ubuntu-extreme` tunnel; ADR 0009). Between 2026-10-17 and then the Mac mini (`mini`) served it while the Lenovo was rebuilt from this repo. The mini keeps its own old copy, parked at 0 replicas since 2026-11-21 (see "What runs where"); it takes no uploads. The old Lenovo cluster (`zion-old`) was wiped on 2026-10-17, so its library and databases are gone: the NAS, the mini's NVMe and the Lenovo's `/srv/immich` hold the data. Immich is the one service that must not go down.
 
 ## What runs where
 
 | | Lenovo (`extreme`, production since 2026-10-21) | Mac mini (`mini`, old copy since the cutover) |
 |---|---|---|
-| Server | `immich-server:v3.3.4`, one GPU slice (transcoding) | `immich-server:v3.2.4`, 1 replica, kept running on purpose, at `https://immich-macos-mini.dove-komodo.ts.net` only. **Do not upload there**: it is not synchronised with the Lenovo |
+| Server | `immich-server:v3.3.4`, one GPU slice (transcoding) | `immich-server:v3.2.4`, **parked at 0 replicas since 2026-11-21** (Postgres and Redis too; volumes kept). It ran at 1 replica from the cutover until a restart left it stuck in `ContainerCreating` (cause not investigated; check the NVMe `hostPath` first). When running it is at `https://macos-mini-immich.dove-komodo.ts.net` only. **Do not upload there**: it is not synchronised with the Lenovo |
 | Postgres | `immich/postgres:14-vectorchord0.4.3-pgvectors0.2.0`, 20Gi local-path, 2 CPU and 3Gi limits, restored from the mini's dump on 2026-10-20 | same image, 20Gi local-path, holds the database as of the cutover (v3.2.4) |
 | Redis | `redis:6.2-alpine` | same |
 | Machine learning | `immich-machine-learning:v3.3.4-cuda`, 1 replica on a GPU slice | CPU image, **0 replicas, disabled** (no GPU) |
@@ -20,10 +20,10 @@ Manifests: `apps/base/immich/` (shared), `apps/extreme/immich/` and `apps/mini/i
 | Name | What | Where |
 |---|---|---|
 | `immich.kanokgan.com` | production, public through Cloudflare | whichever machine is primary |
-| `immich-ubuntu-extreme.dove-komodo.ts.net` | debug, tailnet only (Tailscale sidecar) | the Lenovo's instance |
-| `immich-macos-mini.dove-komodo.ts.net` | debug, tailnet only (Tailscale sidecar) | the mini's instance (renamed from `immich-standby` on 2026-10-18, while the pod was down anyway) |
+| `ubuntu-extreme-immich.dove-komodo.ts.net` | debug, tailnet only (Tailscale sidecar) | the Lenovo's instance |
+| `macos-mini-immich.dove-komodo.ts.net` | debug, tailnet only (Tailscale sidecar) | the mini's instance, offline while parked (renamed from `immich-standby` on 2026-10-18, while the pod was down anyway) |
 
-Pattern: `<app>-<machine>`, the machine names of the naming convention. Actual follows the same pattern.
+Pattern: `<machine>-<app>`, the machine names of the naming convention (`<app>-<machine>` until 2026-11-21, e.g. `immich-ubuntu-extreme`). All apps with a Tailscale sidecar follow the same pattern.
 
 ## Data and backups
 

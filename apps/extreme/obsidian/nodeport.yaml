@@ -1,7 +1,8 @@
 # apps/extreme/obsidian/nodeport.yaml
 # Public path for obsidian.kanokgan.com on the Lenovo: the host's cloudflared (tunnel ubuntu-extreme) cannot resolve
 # cluster DNS, so Obsidian is also reachable on a fixed NodePort, here on the host's localhost:30320. The tunnel
-# route points at http://localhost:30320 and the hostname must be behind Cloudflare Access.
+# route points at http://localhost:30320 and the hostname must be behind Cloudflare Access. A NodePort listens on
+# every interface of the node (LAN included), so it targets the basic-auth proxy (3000), never Ignis (8080).
 apiVersion: v1
 kind: Service
 metadata:

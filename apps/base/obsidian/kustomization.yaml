@@ -1,6 +1,6 @@
 # apps/base/obsidian/kustomization.yaml
-# Cluster-neutral definition of Obsidian in the browser. The data volume, Tailscale access and secrets live in
-# apps/<cluster>/obsidian/.
+# Cluster-neutral definition of Obsidian in the browser (Ignis behind a basic-auth Caddy sidecar). The data volume,
+# Tailscale access, allowed origins and secrets live in apps/<cluster>/obsidian/.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: obsidian

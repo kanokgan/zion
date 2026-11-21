@@ -13,7 +13,8 @@ SHARES=(
     "temp;smb://$NAS_HOST/temp"
     "Media;smb://$NAS_HOST/Media"
     "ZionLabs;smb://$NAS_HOST/ZionLabs"
-    # Personal drives
+    "IPCamera;smb://$NAS_HOST/IPCamera"
+    "GameDrive;smb://$NAS_HOST/GameDrive"
     "KanokganDrive;smb://$NAS_HOST/KanokganDrive"
     "JongdeeDrive;smb://$NAS_HOST/JongdeeDrive"
     "OrawanDrive;smb://$NAS_HOST/OrawanDrive"

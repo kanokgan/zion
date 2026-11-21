@@ -1,7 +1,7 @@
 # apps/extreme/syncthing/kustomization.yaml
 # Syncthing on the Lenovo (cluster `extreme`): one more device in the owner's Syncthing network, keeping the Obsidian
-# vault in sync. Tailnet only: admin page at https://syncthing-ubuntu-extreme.dove-komodo.ts.net, sync port
-# tcp://syncthing-ubuntu-extreme.dove-komodo.ts.net:22000 (Tailscale sidecar); no public hostname, no NodePort.
+# vault in sync. Tailnet only: admin page at https://ubuntu-extreme-syncthing.dove-komodo.ts.net, sync port
+# tcp://ubuntu-extreme-syncthing.dove-komodo.ts.net:22000 (Tailscale sidecar); no public hostname, no NodePort.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -39,7 +39,7 @@ patches:
                         name: tailscale-auth
                         key: TS_AUTHKEY
                   - name: TS_HOSTNAME
-                    value: syncthing-ubuntu-extreme
+                    value: ubuntu-extreme-syncthing
                   - name: TS_KUBE_SECRET
                     value: syncthing-tailscale-state
                   - name: TS_USERSPACE

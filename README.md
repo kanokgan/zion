@@ -32,7 +32,7 @@ Legend: solid arrows are requests, dashed arrows are data copies or mounts.
 
 ### Lenovo: `extreme` (production)
 
-Ubuntu Server stays; k3s is installed from [hosts/ubuntu-extreme/](hosts/ubuntu-extreme/README.md), and Flux applies everything in `clusters/extreme/`. Public traffic comes in through `cloudflared` running on the host, which reaches the apps on NodePorts. The GPU is shared between pods by time-slicing. Two systemd timers copy Immich (04:00) and SilverBullet (04:30) to the NAS.
+Ubuntu Server stays; k3s is installed from [hosts/ubuntu-extreme/](hosts/ubuntu-extreme/README.md), and Flux applies everything in `clusters/extreme/`. Public traffic comes in through `cloudflared` running on the host, which reaches the apps on NodePorts. The GPU is shared between pods by time-slicing. Three systemd timers copy Immich (04:00) and SilverBullet (04:30) to the NAS, and mirror every GitHub repo with its LFS files there (05:00, [ADR 0011](docs/decisions/0011-github-backup-as-bare-mirrors.md)).
 
 ```mermaid
 flowchart LR

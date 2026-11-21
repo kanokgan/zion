@@ -3,7 +3,7 @@
 # the serve config (HTTPS on the tailnet name, proxied to Grafana on 127.0.0.1:3000) and a ServiceAccount that lets
 # the sidecar keep its node identity in the Secret grafana-tailscale-state, so restarts do not create new devices.
 # The sidecar itself and the auth key are wired in the HelmRelease once tailscale-auth.sops.yaml exists (stage 2, part B).
-# Tailnet name: https://grafana-ubuntu-extreme.dove-komodo.ts.net  (pattern <app>-<machine>).
+# Tailnet name: https://ubuntu-extreme-grafana.dove-komodo.ts.net  (pattern <machine>-<app>).
 apiVersion: v1
 kind: ConfigMap
 metadata:
