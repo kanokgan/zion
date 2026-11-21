@@ -10,9 +10,8 @@ fi
 
 # 2. Define shares
 SHARES=(
-    "Media;smb://$NAS_HOST/Media"
     "temp;smb://$NAS_HOST/temp"
-    "Projects;smb://$NAS_HOST/Projects"
+    "Media;smb://$NAS_HOST/Media"
     "ZionLabs;smb://$NAS_HOST/ZionLabs"
     # Personal drives
     "KanokganDrive;smb://$NAS_HOST/KanokganDrive"
