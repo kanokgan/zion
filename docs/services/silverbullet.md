@@ -1,12 +1,12 @@
 # SilverBullet
 
-Personal notes as markdown pages in a folder, edited in the browser. Production runs on the Lenovo (cluster `extreme`, host `ubuntu-extreme`) at `silverbullet.kanokgan.com`; the mini holds a warm standby reachable on the tailnet only.
+Personal notes as markdown pages in a folder, edited in the browser. Production runs on the Lenovo (cluster `extreme`, host `ubuntu-extreme`) at `silverbullet.kanokgan.com`; the mini holds a standby, tailnet only, parked at 0 replicas since 2026-11-21 (volume kept).
 
 **Since 2026-11-11 the Lenovo's SilverBullet opens the Obsidian vault** (`/srv/obsidian/vault`, kept in sync by Syncthing), as a second, lightweight editor next to the browser Obsidian ([obsidian.md](obsidian.md)); see "Editing the Obsidian vault". The mini's instance is unchanged: it has its own separate, empty space.
 
 ## What runs where
 
-| | Lenovo (`extreme`, primary) | Mac mini (`mini`, standby) |
+| | Lenovo (`extreme`, primary) | Mac mini (`mini`, standby, parked at 0 since 2026-11-21) |
 |---|---|---|
 | Image | `ghcr.io/silverbulletmd/silverbullet:2.12.1-slim` | same tag |
 | Data | the Obsidian vault, host directory `/srv/obsidian/vault` (static PV/PVC `silverbullet-vault`, `Retain`), mounted at `/data` | 20Gi `local-path` PVC `silverbullet-data` on the Lima VM disk |

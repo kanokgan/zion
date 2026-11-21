@@ -1,8 +1,10 @@
 # apps/mini/immich/kustomization.yaml
 # Mini overlay (ADR 0004): was production 2026-10-17 to 2026-10-20. Since the cutover to the Lenovo it is an old, frozen
-# copy, kept at 1 replica on purpose and reachable only at https://macos-mini-immich.dove-komodo.ts.net (Tailscale
-# sidecar in the server pod); immich.kanokgan.com points at the Lenovo. Do not upload here. ML stays at 0. Never
-# refresh the NVMe from the NAS by accident, and keep the mini to NAS job off while the Lenovo's job writes that path.
+# copy; immich.kanokgan.com points at the Lenovo. Do not upload here. Never refresh the NVMe from the NAS by accident,
+# and keep the mini to NAS job off while the Lenovo's job writes that path.
+# PARKED since 2026-11-21: every Deployment at 0 (the server was stuck in ContainerCreating). Volumes, Secrets and the
+# Tailscale identity are kept. To bring it back: fix the cause, then set server, postgres and redis to 1 (ML stays 0);
+# it is reachable only at https://macos-mini-immich.dove-komodo.ts.net (Tailscale sidecar in the server pod).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -19,24 +21,24 @@ images:
     newTag: v3.2.4
   - name: ghcr.io/immich-app/immich-machine-learning
     newTag: v3.2.4
+# Parked (see header). Machine learning stays at 0 even when the rest comes back (no GPU on the mini).
+replicas:
+  - name: immich-server
+    count: 0
+  - name: immich-postgres
+    count: 0
+  - name: immich-redis
+    count: 0
+  - name: immich-machine-learning
+    count: 0
 patches:
   - target:
       kind: Deployment
       name: immich-server
     patch: |-
       - op: replace
-        path: /spec/replicas
-        value: 1
-      - op: replace
         path: /spec/template/spec/containers/0/env/1/value
         value: "false"
-  - target:
-      kind: Deployment
-      name: immich-machine-learning
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 0
   - target:
       kind: Deployment
       name: immich-server

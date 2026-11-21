@@ -1,10 +1,10 @@
 # Actual Budget
 
-Personal budgeting app used daily by family. Since 2026-10-17 production runs on the rebuilt Lenovo (cluster `extreme`, host `ubuntu-extreme`, ADR 0009) at `actual.kanokgan.com`. It ran on the Mac mini for the hours in between; the mini's copy is stale and, by the owner's choice (2026-10-21), is kept running at 1 replica at its tailnet name only. For debugging one specific instance there are tailnet-only names of the form `actual-<machine>.dove-komodo.ts.net`.
+Personal budgeting app used daily by family. Since 2026-10-17 production runs on the rebuilt Lenovo (cluster `extreme`, host `ubuntu-extreme`, ADR 0009) at `actual.kanokgan.com`. It ran on the Mac mini for the hours in between; the mini's copy is stale; it ran at 1 replica at its tailnet name only from 2026-10-21 and is parked at 0 since 2026-11-21. For debugging one specific instance there are tailnet-only names of the form `<machine>-actual.dove-komodo.ts.net`.
 
 ## What runs where
 
-| | Lenovo (`extreme`, production) | Mac mini (`mini`, previous production, stale copy kept running) |
+| | Lenovo (`extreme`, production) | Mac mini (`mini`, previous production, stale copy parked at 0 since 2026-11-21) |
 |---|---|---|
 | Image | `actualbudget/actual-server:26.10.0` | `actualbudget/actual-server:26.10.0` |
 | Data | 10Gi `local-path` PVC `actual-data`, mounted at `/data` | 10Gi `local-path` PVC `actual-data` on the Lima VM disk |
@@ -66,5 +66,5 @@ Rollback: revert the commit if the pod never became healthy. If data was migrate
 
 ## Open items
 
-- The mini's Actual is kept at 1 replica on purpose (decided 2026-10-21): it is a stale copy with its own data, so it does not conflict with the Lenovo's, but anything entered there is not synchronised and will be lost. Enter data only at `actual.kanokgan.com`. Scale it to 0 in `apps/mini/actual/kustomization.yaml` if it ever causes confusion.
+- The mini's Actual is parked at 0 replicas (2026-11-21; it ran at 1 from 2026-10-21). It is a stale copy with its own data, so it does not conflict with the Lenovo's, but anything entered there is not synchronised and will be lost. Enter data only at `actual.kanokgan.com`. To bring it back, set the count to 1 in `apps/mini/actual/kustomization.yaml`.
 - Backup is a manual export to the NAS. Automating it with a CronJob or a host job is optional (backup ADR).

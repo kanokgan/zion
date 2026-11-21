@@ -12,9 +12,9 @@ Last updated: 2026-10-29
 
 | Service | Runs on | Backup | Restore tested | Doc |
 |---|---|---|---|---|
-| Immich | `extreme` (cut over 2026-10-20 to 21); mini: old frozen copy | Nightly Lenovo to NAS `rclone` job (04:00, since 2026-10-21), plus Immich's own DB dump and hourly NAS snapshots | DB restore from a dump: 2026-10-11 (mini) and at the 2026-10-20 cutover (Lenovo). Library copied from the NAS to the Lenovo at the cutover. Not yet from the nightly job's output on the Lenovo | [immich.md](../services/immich.md) |
-| Actual Budget | `extreme` (since 2026-10-17); mini: stale copy | Manual export to the NAS | Export and import onto the mini worked, 2026-10-12 | [actual.md](../services/actual.md) |
-| SilverBullet | `extreme` (since 2026-10-25, `silverbullet.kanokgan.com`); mini: tailnet-only standby, starts empty | Nightly Lenovo to NAS job (04:30) | Not done; mini refresh procedure to be written | [silverbullet.md](../services/silverbullet.md) |
+| Immich | `extreme` (cut over 2026-10-20 to 21); mini: old frozen copy, parked at 0 since 2026-11-21 | Nightly Lenovo to NAS `rclone` job (04:00, since 2026-10-21), plus Immich's own DB dump and hourly NAS snapshots | DB restore from a dump: 2026-10-11 (mini) and at the 2026-10-20 cutover (Lenovo). Library copied from the NAS to the Lenovo at the cutover. Not yet from the nightly job's output on the Lenovo | [immich.md](../services/immich.md) |
+| Actual Budget | `extreme` (since 2026-10-17); mini: stale copy, parked at 0 since 2026-11-21 | Manual export to the NAS | Export and import onto the mini worked, 2026-10-12 | [actual.md](../services/actual.md) |
+| SilverBullet | `extreme` (since 2026-10-25, `silverbullet.kanokgan.com`); mini: tailnet-only standby, starts empty, parked at 0 since 2026-11-21 | Nightly Lenovo to NAS job (04:30) | Not done; mini refresh procedure to be written | [silverbullet.md](../services/silverbullet.md) |
 | Obsidian in the browser | `extreme` (`obsidian.kanokgan.com`, behind Cloudflare Access) | The vault is copied by Syncthing to the owner's other devices; no NAS job yet | Not done | [obsidian.md](../services/obsidian.md) |
 | Syncthing | `extreme`, tailnet only; the Obsidian vault is joined and syncing | Config in `/srv/syncthing/config` is not backed up yet | Not done | [syncthing.md](../services/syncthing.md) |
 | Monitoring | `extreme` (stages 1 and 2 live) | Prometheus data is disposable, Grafana is stateless (ADR 0010) | n/a | [monitoring.md](../services/monitoring.md) |
@@ -74,6 +74,7 @@ Immich and the Lenovo:
 - [ ] Clean up untracked files (Administration, Repair) and lower the database backup retention, after the cutover is verified.
 - [ ] Storage: the Lenovo's disk was at about 82% on 2026-10-21. Plan: a second 2 TB NVMe and an online LVM extend; revisit around April 2027 or at 90% ([storage plan](../../hosts/ubuntu-extreme/README.md)). Moving originals to the NAS waits for a second copy of them and the NAS storage ADR.
 - [ ] Make the library PV's declared size realistic (1Ti declared, 1.3 TB real).
+- [ ] Mini apps parked at 0 (2026-11-21): find why the mini's Immich server stuck in `ContainerCreating` (check the NVMe `hostPath` `/mnt/immich-library` in the Lima VM first) before scaling anything back up.
 - [ ] Mini standby refresh for Immich: upgrade the mini to the Lenovo's version, NAS to NVMe in the right direction, DB restore on a clean Postgres volume, then a tested failover and failback (ADR 0004).
 - [ ] Test a restore of the library from the nightly job's NAS copy.
 

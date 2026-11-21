@@ -1,8 +1,12 @@
 # apps/mini/actual/kustomization.yaml
 # Actual Budget on the mini: a stale standby copy, NOT production. actual.kanokgan.com is served by the Lenovo
 # (cluster extreme, tunnel ubuntu-extreme). Debug address: https://macos-mini-actual.dove-komodo.ts.net.
+# PARKED since 2026-11-21: scaled to 0, volume and Tailscale identity kept. Set the count to 1 to bring it back.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+replicas:
+  - name: actual
+    count: 0
 resources:
   - ../../base/actual
   - nodeport.yaml
