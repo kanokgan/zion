@@ -10,7 +10,7 @@ Personal notes as markdown pages in a folder, edited in the browser. Production 
 |---|---|---|
 | Image | `ghcr.io/silverbulletmd/silverbullet:2.12.1-slim` | same tag |
 | Data | the Obsidian vault, host directory `/srv/obsidian/vault` (static PV/PVC `silverbullet-vault`, `Retain`), mounted at `/data` | 20Gi `local-path` PVC `silverbullet-data` on the Lima VM disk |
-| Tailscale (debug, tailnet only) | sidecar `silverbullet-ubuntu-extreme`: `https://silverbullet-ubuntu-extreme.dove-komodo.ts.net` | sidecar `silverbullet-macos-mini`: `https://silverbullet-macos-mini.dove-komodo.ts.net` |
+| Tailscale (debug, tailnet only) | sidecar `ubuntu-extreme-silverbullet`: `https://ubuntu-extreme-silverbullet.dove-komodo.ts.net` | sidecar `macos-mini-silverbullet`: `https://macos-mini-silverbullet.dove-komodo.ts.net` |
 | Public | `silverbullet.kanokgan.com` via tunnel `ubuntu-extreme` (`cloudflared` on the host), service `http://localhost:30300` -> NodePort Service `silverbullet-nodeport` | none |
 | Login | SilverBullet's own, `SB_USER` (`username:password`) from `silverbullet-auth.sops.yaml` | same mechanism, own secret |
 

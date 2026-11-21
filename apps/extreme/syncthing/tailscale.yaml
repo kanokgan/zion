@@ -2,7 +2,7 @@
 # Tailscale sidecar support for Syncthing on the Lenovo: serve config and a ServiceAccount that lets the sidecar
 # keep its node identity in the Secret syncthing-tailscale-state. The auth key is in tailscale-auth.sops.yaml.
 # Serve config: HTTPS on the tailnet name proxied to the admin page (127.0.0.1:8384), and a plain TCP forward of the
-# sync port, so other devices on the tailnet can connect to tcp://syncthing-ubuntu-extreme.dove-komodo.ts.net:22000.
+# sync port, so other devices on the tailnet can connect to tcp://ubuntu-extreme-syncthing.dove-komodo.ts.net:22000.
 # Devices outside the tailnet use Syncthing's relays (outbound only), so nothing is opened on the router.
 apiVersion: v1
 kind: ConfigMap

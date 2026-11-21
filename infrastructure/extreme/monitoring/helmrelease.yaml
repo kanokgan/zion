@@ -119,7 +119,7 @@ spec:
         server:
           # The tailnet address of the sidecar below. After login Grafana redirects here, so a port-forward to
           # localhost still needs the tailnet to be reachable from that machine.
-          root_url: https://grafana-ubuntu-extreme.dove-komodo.ts.net
+          root_url: https://ubuntu-extreme-grafana.dove-komodo.ts.net
       # The pod runs as the ServiceAccount that the Tailscale sidecar needs (grafana-tailscale.yaml); the chart's own
       # RBAC for the dashboard sidecars binds to this name too.
       serviceAccount:
@@ -129,7 +129,7 @@ spec:
         - name: tailscale-config
           configMap:
             name: tailscale-serve-config
-      # Tailscale sidecar, same pattern as Immich and Actual: tailnet-only access, name <app>-<machine>.
+      # Tailscale sidecar, same pattern as Immich and Actual: tailnet-only access, name <machine>-<app>.
       # Deliberate exception to "pin image versions": a backward-compatible networking client that should pick up
       # security fixes (docs/services/immich.md). The key is only used on first join; the identity then lives in
       # the Secret grafana-tailscale-state.
@@ -144,7 +144,7 @@ spec:
                   name: tailscale-auth
                   key: TS_AUTHKEY
             - name: TS_HOSTNAME
-              value: grafana-ubuntu-extreme
+              value: ubuntu-extreme-grafana
             - name: TS_KUBE_SECRET
               value: grafana-tailscale-state
             - name: TS_USERSPACE

@@ -13,7 +13,7 @@ Note: a browser never hands Ctrl/Cmd+W, T, N or Q to a page, so Ignis does not f
 | Image | `nobbe/ignis:0.9.0` (amd64 and arm64), which downloads and pins Obsidian 1.14.4 on first start; `caddy:2.11.9-alpine` as the basic-auth sidecar `auth-proxy` |
 | Data | host directory `/srv/obsidian` (static PV/PVC `obsidian-data`, `Retain`): `vault/Zion` at `/vaults/Zion` (the vault itself; `vault/` is the Syncthing folder, which also holds Syncthing's and SilverBullet's own files, so only `Zion/` is mounted), `ignis/data` at `/app/data` (Ignis settings), `ignis/app` at `/app/obsidian-app` (the downloaded Obsidian). `config/` is the old linuxserver settings, unused, to delete after the soak |
 | Login | Ignis has none. Public path: Cloudflare Access, then basic auth in `auth-proxy` (`CUSTOM_USER` and `BASIC_AUTH_HASH` from `obsidian-auth.sops.yaml`) |
-| Tailscale (debug, tailnet only) | sidecar `obsidian-ubuntu-extreme`: `https://obsidian-ubuntu-extreme.dove-komodo.ts.net`, straight to Ignis on 8080 (no basic auth; the tailnet is the access control) |
+| Tailscale (debug, tailnet only) | sidecar `ubuntu-extreme-obsidian`: `https://ubuntu-extreme-obsidian.dove-komodo.ts.net`, straight to Ignis on 8080 (no basic auth; the tailnet is the access control) |
 | Public | `obsidian.kanokgan.com` via tunnel `ubuntu-extreme`, service `http://localhost:30320` -> NodePort Service `obsidian-nodeport` -> `auth-proxy` (3000) -> Ignis (8080) |
 | Mini | none |
 
@@ -41,7 +41,7 @@ Ignis has **no login**: anyone who reaches port 8080 can read, change or delete 
    - `obsidian-auth.sops.yaml`: `CUSTOM_USER` (a username) and `BASIC_AUTH_HASH`, a bcrypt hash of a long random password. Make the hash on the Mac without the password landing in shell history: `htpasswd -nBC 12 "" | tr -d ':\n'` (it prompts twice; macOS ships `htpasswd`), then `sops apps/extreme/obsidian/obsidian-auth.sops.yaml` and paste it as the value. Keep the password in your password manager.
    - `tailscale-auth.sops.yaml`: a Tailscale auth key (not ephemeral).
 4. **Check, commit, push:** `kubectl kustomize apps/extreme > /dev/null && echo ok`.
-5. **Test on the tailnet name** `https://obsidian-ubuntu-extreme.dove-komodo.ts.net`: the first start downloads Obsidian (a minute or two), then the vault `Zion` opens. If Ignis shows an empty vault, `vault/Zion` does not exist yet (Syncthing has not finished) and the kubelet created it empty: wait for Syncthing, then restart the pod.
+5. **Test on the tailnet name** `https://ubuntu-extreme-obsidian.dove-komodo.ts.net`: the first start downloads Obsidian (a minute or two), then the vault `Zion` opens. If Ignis shows an empty vault, `vault/Zion` does not exist yet (Syncthing has not finished) and the kubelet created it empty: wait for Syncthing, then restart the pod.
 6. **Cloudflare Access first, then the route** (already in place; for a rebuild): in Cloudflare Zero Trust, Access, Applications, a self-hosted application for `obsidian.kanokgan.com` with one policy, Allow, Emails, your own address. Only then the public hostname `obsidian.kanokgan.com` -> `http://localhost:30320` on the tunnel `ubuntu-extreme`. Test in a private window: Cloudflare login, then the basic-auth prompt, then Obsidian. Repeat after any change to the application or the tunnel.
 
 ## Switch from linuxserver to Ignis (2026-11-13)
