@@ -2,7 +2,7 @@
 
 Obsidian's own interface, run as a web app in the browser with [Ignis](https://github.com/Nystik-gh/ignis): a small Node server reads and writes the vault on the Lenovo, and the Obsidian UI runs in the browser tab. It exists because the work laptop blocks installing apps, so a browser is the only way in. Personal vault only.
 
-**Status: live on Ignis since 2026-11-13.** From 2026-10-25 to 2026-11-13 this was the linuxserver image: the Obsidian desktop app streamed as a remote desktop (Selkies). It was replaced because a remote desktop in a browser tab keeps colliding with the browser: shortcuts such as Ctrl/Cmd+W closed the browser tab instead of the Obsidian tab, there was typing latency, and the clipboard went through a relay. Alternatives looked at: SilverBullet (already on the vault, but not Obsidian), Browsidian (a basic editor, no license, no image, no login).
+**Status: live on Ignis since 2026-11-13.** From 2026-10-25 to 2026-11-13 this was the linuxserver image: the Obsidian desktop app streamed as a remote desktop (Selkies). It was replaced because a remote desktop in a browser tab keeps colliding with the browser: shortcuts such as Ctrl/Cmd+W closed the browser tab instead of the Obsidian tab, there was typing latency, and the clipboard went through a relay. Alternatives looked at: SilverBullet (already on the vault, but not Obsidian; removed on 2026-11-23 in favour of this), Browsidian (a basic editor, no license, no image, no login).
 
 Note: a browser never hands Ctrl/Cmd+W, T, N or Q to a page, so Ignis does not fix those keys by itself. Install the page as an app (Chrome/Edge: menu, "Install page as app", or Ignis's own install prompt) so it opens in its own window, and rebind Obsidian's "close tab" (Settings, Hotkeys) if it still collides.
 
@@ -11,7 +11,7 @@ Note: a browser never hands Ctrl/Cmd+W, T, N or Q to a page, so Ignis does not f
 | | Lenovo (`extreme`) |
 |---|---|
 | Image | `nobbe/ignis:0.9.0` (amd64 and arm64), which downloads and pins Obsidian 1.14.4 on first start; `caddy:2.11.9-alpine` as the basic-auth sidecar `auth-proxy` |
-| Data | host directory `/srv/obsidian` (static PV/PVC `obsidian-data`, `Retain`): `vault/Zion` at `/vaults/Zion` (the vault itself; `vault/` is the Syncthing folder, which also holds Syncthing's and SilverBullet's own files, so only `Zion/` is mounted), `ignis/data` at `/app/data` (Ignis settings), `ignis/app` at `/app/obsidian-app` (the downloaded Obsidian). `config/` is the old linuxserver settings, unused, to delete after the soak |
+| Data | host directory `/srv/obsidian` (static PV/PVC `obsidian-data`, `Retain`): `vault/Zion` at `/vaults/Zion` (the vault itself; `vault/` is the Syncthing folder, which also holds Syncthing's own files and any left by SilverBullet until 2026-11-23, so only `Zion/` is mounted), `ignis/data` at `/app/data` (Ignis settings), `ignis/app` at `/app/obsidian-app` (the downloaded Obsidian). `config/` is the old linuxserver settings, unused, to delete after the soak |
 | Login | Ignis has none. Public path: Cloudflare Access, then basic auth in `auth-proxy` (`CUSTOM_USER` and `BASIC_AUTH_HASH` from `obsidian-auth.sops.yaml`) |
 | Tailscale (debug, tailnet only) | sidecar `ubuntu-extreme-obsidian`: `https://ubuntu-extreme-obsidian.dove-komodo.ts.net`, straight to Ignis on 8080 (no basic auth; the tailnet is the access control) |
 | Public | `obsidian.kanokgan.com` via tunnel `ubuntu-extreme`, service `http://localhost:30320` -> NodePort Service `obsidian-nodeport` -> `auth-proxy` (3000) -> Ignis (8080) |
@@ -76,7 +76,7 @@ If `auth-proxy` fails with `operation not permitted`, the container's capability
 
 ## Vault sync
 
-Syncthing shares `/srv/obsidian/vault` with the owner's other devices ([syncthing.md](syncthing.md)), so edits in the browser reach every device. Syncthing conflicts are the risk to watch: avoid editing the same note on two devices at once. Syncthing is not a backup: deletes sync too. SilverBullet opens the same folder ([silverbullet.md](silverbullet.md)); keep to one editor per note at a time.
+Syncthing shares `/srv/obsidian/vault` with the owner's other devices ([syncthing.md](syncthing.md)), so edits in the browser reach every device. Syncthing conflicts are the risk to watch: avoid editing the same note on two devices at once. Syncthing is not a backup: deletes sync too. Until 2026-11-23 SilverBullet also opened this folder ([silverbullet.md](silverbullet.md)); now Ignis and Syncthing are the only writers on the Lenovo.
 
 ## Backup and restore
 
@@ -92,4 +92,4 @@ Versions live in the `images:` block of `apps/extreme/obsidian/kustomization.yam
 - Check that "Install page as app" works with basic auth in front. If the browser cannot fetch the web app manifest, exempt that one path from basic auth in the Caddyfile (it is still behind Cloudflare Access).
 - Decide whether a nightly NAS copy of the vault is needed on top of the other devices' copies.
 - Restore test (resync a vault from the other devices into an empty folder).
-- With Ignis, decide whether to keep SilverBullet on the vault as well (one less writer if not).
+- SilverBullet was removed on 2026-11-23. Check the Syncthing folder root (`ls -la /srv/obsidian/vault`) for files it created (outside `Zion/`) and delete them; the delete syncs to every device, which is the point.

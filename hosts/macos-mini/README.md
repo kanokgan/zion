@@ -13,7 +13,7 @@ Things that run directly on macOS, outside the Lima VM and outside Flux (ADR 000
 | Lima | Homebrew `lima` | VM `zion` (see `hosts/macos-mini/lima/zion.yaml`). The cluster is called `mini` (kubectl context, `clusters/mini/`, since 2026-10-20), but the VM and the k3s node keep the name `zion`: local-path volumes are tied to the node name, so renaming the node would orphan them |
 
 ## After a reboot
-FileVault is on, so nothing user-level starts until someone logs in. The Lima VM `zion` (k3s with the old Immich and Actual copies and the SilverBullet standby) does not start by itself: on 2026-10-18, after a reboot and login, `limactl list` showed it `Stopped` and every service on the cluster was down, even though the external drive was mounted.
+FileVault is on, so nothing user-level starts until someone logs in. The Lima VM `zion` (k3s with the old Immich and Actual copies) does not start by itself: on 2026-10-18, after a reboot and login, `limactl list` showed it `Stopped` and every service on the cluster was down, even though the external drive was mounted.
 
 1. Log in and make sure `/Volumes/HighSpeed2T` is mounted (`ls /Volumes/HighSpeed2T/Immich/Backup`). Lima refuses to start without it (see `mounts` in `lima/zion.yaml`).
 2. `limactl start zion`

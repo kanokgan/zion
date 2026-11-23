@@ -1,6 +1,6 @@
 # Zion Lab
 
-My homelab: self-hosted photos (Immich), budgeting (Actual Budget), notes (SilverBullet, Obsidian in the browser, Syncthing), and media (Plex, Jellyfin), reachable privately over Tailscale and publicly through Cloudflare on `kanokgan.com`. Storage lives on a Synology DS923+.
+My homelab: self-hosted photos (Immich), budgeting (Actual Budget), notes (Obsidian in the browser, Syncthing), and media (Plex, Jellyfin), reachable privately over Tailscale and publicly through Cloudflare on `kanokgan.com`. Storage lives on a Synology DS923+.
 
 The setup was rebuilt from an ad hoc cluster into one that is fully defined in Git and reproducible. **This repo is the single source of truth**: both clusters are built only from it, through Flux. The few things that live outside Kubernetes (each machine's host setup, the Lima VM and native media apps on the Mac mini, the Cloudflare connector on each machine, and the one decryption key) are documented here as manual steps.
 
@@ -20,19 +20,18 @@ Two machines each run a single-node k3s cluster built from this repo: the Lenovo
 |---|---|---|
 | Immich | `extreme` ([doc](docs/services/immich.md)) | old frozen copy, tailnet only, no uploads |
 | Actual Budget | `extreme` ([doc](docs/services/actual.md)) | old stale copy, tailnet only |
-| SilverBullet | `extreme` ([doc](docs/services/silverbullet.md)) | tailnet-only warm standby |
 | Obsidian (browser) | `extreme`, behind Cloudflare Access ([doc](docs/services/obsidian.md)) | none |
 | Syncthing | `extreme`, tailnet only ([doc](docs/services/syncthing.md)) | none |
 | Monitoring | `extreme` ([doc](docs/services/monitoring.md), [ADR 0010](docs/decisions/0010-monitoring.md)) | not started |
 | Plex, Jellyfin | native macOS apps on the mini ([ADR 0008](docs/decisions/0008-native-media-servers-on-mini.md)) | same |
 
-History: the old Lenovo cluster (`zion-old`) was wiped on 2026-10-17 and rebuilt from this repo; Immich and Actual spent a few days on the mini and returned to the Lenovo by 2026-10-21. The mini is meant to become a warm standby for Immich ([ADR 0004](docs/decisions/0004-mini-as-immich-standby.md)), but has no refresh procedure yet.
+History: the old Lenovo cluster (`zion-old`) was wiped on 2026-10-17 and rebuilt from this repo; Immich and Actual spent a few days on the mini and returned to the Lenovo by 2026-10-21. SilverBullet ran from 2026-10-25 to 2026-11-23 and was replaced by Obsidian in the browser; its manifests stay in `apps/` but are not deployed ([doc](docs/services/silverbullet.md)). The mini is meant to become a warm standby for Immich ([ADR 0004](docs/decisions/0004-mini-as-immich-standby.md)), but has no refresh procedure yet.
 
 Legend: solid arrows are requests, dashed arrows are data copies or mounts.
 
 ### Lenovo: `extreme` (production)
 
-Ubuntu Server stays; k3s is installed from [hosts/ubuntu-extreme/](hosts/ubuntu-extreme/README.md), and Flux applies everything in `clusters/extreme/`. Public traffic comes in through `cloudflared` running on the host, which reaches the apps on NodePorts. The GPU is shared between pods by time-slicing. Three systemd timers copy Immich (04:00) and SilverBullet (04:30) to the NAS, and mirror every GitHub repo with its LFS files there (05:00, [ADR 0011](docs/decisions/0011-github-backup-as-bare-mirrors.md)).
+Ubuntu Server stays; k3s is installed from [hosts/ubuntu-extreme/](hosts/ubuntu-extreme/README.md), and Flux applies everything in `clusters/extreme/`. Public traffic comes in through `cloudflared` running on the host, which reaches the apps on NodePorts. The GPU is shared between pods by time-slicing. Two systemd timers copy Immich (04:00) to the NAS and mirror every GitHub repo with its LFS files there (05:00, [ADR 0011](docs/decisions/0011-github-backup-as-bare-mirrors.md)).
 
 ```mermaid
 flowchart LR
@@ -46,7 +45,7 @@ flowchart LR
 
   subgraph lenovo["Lenovo X1 Extreme2 · Ubuntu · GPU · host: ubuntu-extreme"]
     cfd["cloudflared<br/>tunnel: ubuntu-extreme"]
-    disk[("/srv on the host disk<br/>immich, silverbullet,<br/>obsidian, syncthing")]
+    disk[("/srv on the host disk<br/>immich, obsidian,<br/>syncthing")]
     bk["nightly backup timers<br/>rclone copy"]
     subgraph k3s["k3s · cluster: extreme"]
       flux["Flux"]
@@ -58,7 +57,6 @@ flowchart LR
         imml["machine learning<br/>(CUDA)"]
         impg[("Postgres")]
       end
-      sb["SilverBullet"]
       obs["Obsidian<br/>(browser)"]
       st["Syncthing"]
     end
@@ -70,14 +68,12 @@ flowchart LR
   cf --> access --> cfd
   cfd --> imsrv
   cfd --> actual
-  cfd --> sb
   cfd --> obs
   me -->|tailnet, sidecars| k3s
   imsrv --> imml
   imsrv --> impg
   imml --> gpu
   disk -.->|mounted| imsrv
-  disk -.->|mounted| sb
   disk -.->|mounted| obs
   disk -.->|mounted| st
   st <-.->|vault sync| obs
@@ -106,20 +102,17 @@ flowchart LR
     tsapp["Tailscale<br/>k3s API on :6443"]
     subgraph vm["Lima VM · k3s (cluster: mini)"]
       flux["Flux"]
-      old["Immich + Actual<br/>old copies, 1 replica"]
-      sb["SilverBullet<br/>standby"]
+      old["Immich + Actual<br/>old copies, 0 replicas"]
     end
   end
 
   gh -->|pull, read-only deploy key| flux
   flux -->|apply + decrypt secrets| old
-  flux --> sb
   internet -->|HTTPS| cf -->|tunnel| cfd
   cfd --> plex
   cfd --> jf
   me -->|tailnet| tsapp
   me -->|tailnet, sidecars| old
-  me -->|tailnet, sidecar| sb
   nvme -.->|mounted into VM| old
   nas -.->|media over SMB, path TBD| plex
   nas -.->|media over SMB, path TBD| jf
@@ -132,7 +125,7 @@ The mini becomes the warm standby for Immich once it has a tested refresh proced
 ## Repo map
 
 - `clusters/<cluster>/`: what Flux syncs, including the Flux install itself (`extreme` and `mini`)
-- `apps/base/<app>/`: cluster-neutral app definitions (Immich, Actual, SilverBullet, Obsidian, Syncthing)
+- `apps/base/<app>/`: cluster-neutral app definitions (Immich, Actual, Obsidian, Syncthing; SilverBullet kept but not deployed)
 - `apps/<cluster>/<app>/`: per-cluster overlays (volumes, Tailscale, NodePorts, encrypted secrets)
 - `infrastructure/`: cluster-wide components for the Lenovo: the GPU device plugin and monitoring (`base/`, `extreme/`, `extreme/monitoring/`)
 - `hosts/<machine>/`: setup for each machine itself, outside Kubernetes. Machines are named `<os>-<nickname>`: `hosts/macos-mini/` (the Lima VM, the native apps) and `hosts/ubuntu-extreme/` (k3s install, GPU notes, `cloudflared`, the NAS backup jobs)

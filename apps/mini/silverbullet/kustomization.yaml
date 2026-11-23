@@ -3,7 +3,8 @@
 # written. Tailnet only, at https://macos-mini-silverbullet.dove-komodo.ts.net (Tailscale sidecar). No NodePort and
 # no tunnel route: silverbullet.kanokgan.com is served by the Lenovo (tunnel ubuntu-extreme). Its data is refreshed
 # from the NAS backup by hand; anything written here is overwritten at the next refresh.
-# PARKED since 2026-11-21: scaled to 0, volume and Tailscale identity kept. Set the count to 1 to bring it back.
+# NOT DEPLOYED since 2026-11-23 (not listed in apps/mini/kustomization.yaml); its empty local-path volume was deleted
+# with it. Parked at 0 from 2026-11-21 before that.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 replicas:

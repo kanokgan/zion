@@ -32,7 +32,7 @@ Immich went back to the Lenovo (cluster `extreme`, restored from the mini's dump
 - The direction of the library sync is reversed relative to the original design: Lenovo to NAS, and only a deliberate restore goes NAS to mini.
 
 ## Update 2026-11-21
-The mini's Immich is parked: every Immich Deployment on `mini` is at 0 replicas (`replicas:` in `apps/mini/immich/kustomization.yaml`), and so are the mini's Actual and SilverBullet. A routine restart left the server in `ContainerCreating` (cause not investigated yet; the library is a `hostPath` on the external NVMe shared into the Lima VM, the first thing to check). Volumes, Secrets and the Tailscale identity are kept, so it can be brought back. The "1 replica, on purpose" line in the 2026-10-21 update no longer holds. This ADR stays accepted; the refresh procedure is still the work that would make the mini a standby.
+The mini's Immich is parked: every Immich Deployment on `mini` is at 0 replicas (`replicas:` in `apps/mini/immich/kustomization.yaml`), and so is the mini's Actual (its SilverBullet standby was removed on 2026-11-23). A routine restart left the server in `ContainerCreating` (cause not investigated yet; the library is a `hostPath` on the external NVMe shared into the Lima VM, the first thing to check). Volumes, Secrets and the Tailscale identity are kept, so it can be brought back. The "1 replica, on purpose" line in the 2026-10-21 update no longer holds. This ADR stays accepted; the refresh procedure is still the work that would make the mini a standby.
 
 ## Failover and failback (outline, to be tested before it is relied on)
 1. Stop Immich on the Lenovo if it is up.

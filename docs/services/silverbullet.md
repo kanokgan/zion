@@ -1,8 +1,22 @@
 # SilverBullet
 
-Personal notes as markdown pages in a folder, edited in the browser. Production runs on the Lenovo (cluster `extreme`, host `ubuntu-extreme`) at `silverbullet.kanokgan.com`; the mini holds a standby, tailnet only, parked at 0 replicas since 2026-11-21 (volume kept).
+> **Retired on 2026-11-23.** Removed from both clusters in favour of [Obsidian in the browser](obsidian.md), which does the same job (notes on the work laptop's browser) with the real Obsidian. The manifests stay in `apps/base/silverbullet/`, `apps/extreme/silverbullet/` and `apps/mini/silverbullet/`, but neither cluster lists them, so Flux does not apply them. The rest of this page describes how it ran, for reference and for a redeploy.
 
-**Since 2026-11-11 the Lenovo's SilverBullet opens the Obsidian vault** (`/srv/obsidian/vault`, kept in sync by Syncthing), as a second, lightweight editor next to the browser Obsidian ([obsidian.md](obsidian.md)); see "Editing the Obsidian vault". The mini's instance is unchanged: it has its own separate, empty space.
+## Retired
+
+What the removal did (commit `silverbullet: remove from both clusters`, Flux `prune: true`):
+- `extreme`: deleted the `silverbullet` namespace (Deployment, NodePort 30300, Tailscale sidecar state, Secrets) and the PV/PVC `silverbullet-vault`. The PV is a `hostPath` with `Retain`, so **`/srv/obsidian/vault` is not touched**; only the Kubernetes objects go. Freed: 100m CPU and 256Mi requested (1 CPU, 1Gi limit) for SilverBullet, plus 50m and 64Mi (500m, 256Mi) for its sidecar.
+- `mini`: deleted the namespace and the `local-path` PVC `silverbullet-data`, whose reclaim policy is `Delete`, so its directory in the Lima VM is gone. It was the standby's own space, never refreshed and empty.
+- Not in Git, done by hand (owner):
+  1. Cloudflare dashboard: remove the public hostname `silverbullet.kanokgan.com` from the tunnel `ubuntu-extreme`, and its DNS record if the dashboard leaves it.
+  2. Tailscale admin console: remove the devices `ubuntu-extreme-silverbullet` and `macos-mini-silverbullet`.
+  3. Lenovo: stop and remove the backup job `silverbullet-nas-sync` (timer, service, `/usr/local/sbin/silverbullet-nas-sync.sh`). Its files were deleted from this repo and are in Git history.
+  4. Lenovo: delete the files SilverBullet created at the root of `/srv/obsidian/vault` (outside `Zion/`); Syncthing removes them on the other devices too.
+  5. Optional: `/srv/silverbullet` (the old space, unused since 2026-11-11). Its last copy is on the NAS at `/ZionLabs/SilverBullet/Backup`, kept with the NAS snapshots.
+
+To bring it back: list `silverbullet` again in `apps/<cluster>/kustomization.yaml`, replace `tailscale-auth.sops.yaml` with a fresh auth key, and re-add the tunnel route after the tailnet test (Setup below).
+
+**From 2026-11-11 to its removal the Lenovo's SilverBullet opened the Obsidian vault** (`/srv/obsidian/vault`, kept in sync by Syncthing), as a second, lightweight editor next to the browser Obsidian ([obsidian.md](obsidian.md)); see "Editing the Obsidian vault". The mini's instance is unchanged: it has its own separate, empty space.
 
 ## What runs where
 
@@ -131,6 +145,4 @@ The mini has no backup job and starts empty. To refresh it from the NAS copy: se
 
 ## Open items
 
-- Restore test and the mini refresh procedure.
-- Import the existing notes (by the owner, by hand), or decide to remove SilverBullet in favour of [Obsidian in the browser](obsidian.md), which the owner found more suitable.
-- Disk usage is covered by the root disk alert (80% and 90%, [monitoring.md](monitoring.md)); there is no per-directory alert.
+- The manual steps under "Retired". Nothing else: the restore test and the mini refresh procedure were dropped with the service.

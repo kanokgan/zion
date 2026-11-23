@@ -101,7 +101,7 @@ spec:
               memory: 1Gi
           volumeMounts:
             # Ignis opens every subfolder of /vaults as a vault. The Syncthing folder (vault/) holds the vault Zion/
-            # plus Syncthing's and SilverBullet's own files, so only Zion/ is mounted: the vault is called "Zion".
+            # plus Syncthing's own files, so only Zion/ is mounted: the vault is called "Zion".
             - name: data
               mountPath: /vaults/Zion
               subPath: vault/Zion

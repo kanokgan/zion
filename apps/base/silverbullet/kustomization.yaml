@@ -1,5 +1,7 @@
 # apps/base/silverbullet/kustomization.yaml
 # Cluster-neutral SilverBullet definition. The data volume, Tailscale access and secrets live in apps/<cluster>/silverbullet/.
+# NOT DEPLOYED since 2026-11-23: replaced by Obsidian in the browser. The manifests are kept for reference; to bring it
+# back, list `silverbullet` again in apps/<cluster>/kustomization.yaml (docs/services/silverbullet.md, "Retired").
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: silverbullet

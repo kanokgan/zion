@@ -1,12 +1,11 @@
 # cloudflared on ubuntu-extreme
 
-Public access for the Lenovo, like the mini's (`hosts/macos-mini/README.md`): `cloudflared` runs on the host, not in the cluster (ADR 0009). It reaches the apps through NodePorts on `localhost`: Immich 30283, Actual 30506, SilverBullet 30300, Obsidian 30320 (`apps/extreme/*/nodeport.yaml`). Current routes on the tunnel `ubuntu-extreme` (managed in the Cloudflare dashboard, not in Git):
+Public access for the Lenovo, like the mini's (`hosts/macos-mini/README.md`): `cloudflared` runs on the host, not in the cluster (ADR 0009). It reaches the apps through NodePorts on `localhost`: Immich 30283, Actual 30506, Obsidian 30320 (`apps/extreme/*/nodeport.yaml`; 30300 was SilverBullet's, removed 2026-11-23). Current routes on the tunnel `ubuntu-extreme` (managed in the Cloudflare dashboard, not in Git):
 
 | Hostname | Service | Note |
 |---|---|---|
 | `immich.kanokgan.com` | `http://localhost:30283` | [immich.md](../../../docs/services/immich.md) |
 | `actual.kanokgan.com` | `http://localhost:30506` | [actual.md](../../../docs/services/actual.md) |
-| `silverbullet.kanokgan.com` | `http://localhost:30300` | added 2026-10-25 after its tailnet test passed ([silverbullet.md](../../../docs/services/silverbullet.md)) |
 | `obsidian.kanokgan.com` | `http://localhost:30320` | behind a Cloudflare Access policy, which must exist before the route ([obsidian.md](../../../docs/services/obsidian.md)) |
 
 ## Setup (once, run by the owner)

@@ -14,14 +14,14 @@ Last updated: 2026-10-29
 |---|---|---|---|---|
 | Immich | `extreme` (cut over 2026-10-20 to 21); mini: old frozen copy, parked at 0 since 2026-11-21 | Nightly Lenovo to NAS `rclone` job (04:00, since 2026-10-21), plus Immich's own DB dump and hourly NAS snapshots | DB restore from a dump: 2026-10-11 (mini) and at the 2026-10-20 cutover (Lenovo). Library copied from the NAS to the Lenovo at the cutover. Not yet from the nightly job's output on the Lenovo | [immich.md](../services/immich.md) |
 | Actual Budget | `extreme` (since 2026-10-17); mini: stale copy, parked at 0 since 2026-11-21 | Manual export to the NAS | Export and import onto the mini worked, 2026-10-12 | [actual.md](../services/actual.md) |
-| SilverBullet | `extreme` (since 2026-10-25, `silverbullet.kanokgan.com`); mini: tailnet-only standby, starts empty, parked at 0 since 2026-11-21 | Nightly Lenovo to NAS job (04:30) | Not done; mini refresh procedure to be written | [silverbullet.md](../services/silverbullet.md) |
+| SilverBullet | **Removed 2026-11-23** from both clusters (ran on `extreme` from 2026-10-25); manifests kept, not deployed | Backup job retired; last copy of the old space on the NAS | n/a | [silverbullet.md](../services/silverbullet.md) |
 | Obsidian in the browser | `extreme` (`obsidian.kanokgan.com`, behind Cloudflare Access) | The vault is copied by Syncthing to the owner's other devices; no NAS job yet | Not done | [obsidian.md](../services/obsidian.md) |
 | Syncthing | `extreme`, tailnet only; the Obsidian vault is joined and syncing | Config in `/srv/syncthing/config` is not backed up yet | Not done | [syncthing.md](../services/syncthing.md) |
 | Monitoring | `extreme` (stages 1 and 2 live) | Prometheus data is disposable, Grafana is stateless (ADR 0010) | n/a | [monitoring.md](../services/monitoring.md) |
 | GitHub mirror (backup of all GitHub repos, not a migrated service) | host timer on `ubuntu-extreme` (since 2026-11-13) | Bare mirrors with LFS, nightly to the NAS (05:00, ADR 0011) | Offline clone + `git lfs pull` from the NAS copy on the Mac, all 170 LFS objects present: 2026-11-13 | [github-mirror.md](../services/github-mirror.md) |
 | Plex, Jellyfin | native on the mini (ADR 0008) | Unknown: how they start, where config lives and how it is backed up are still to be recorded in [hosts/macos-mini/](../../hosts/macos-mini/README.md) | No | not in Kubernetes |
 
-Not a migration, but worth knowing: SilverBullet was found unsuitable (it needs plugins for basics) and is still running; whether to keep or remove it is decided after living with Obsidian for a while.
+Not a migration, but worth knowing: SilverBullet was found unsuitable (it needs plugins for basics) and was removed on 2026-11-23, once Obsidian in the browser had proven itself.
 
 Found on `zion-old` and decided when it was wiped on 2026-10-17:
 - `monitoring` (kube-prometheus, Grafana, Alertmanager) and `web-scraper` (data 50Gi): dropped, their data discarded. Monitoring was rebuilt from Git (ADR 0010); the web scraper has not been.
@@ -79,7 +79,7 @@ Immich and the Lenovo:
 - [ ] Test a restore of the library from the nightly job's NAS copy.
 
 Notes stack:
-- [ ] SilverBullet: restore test (on the mini, which doubles as its refresh procedure), then decide whether to keep it.
+- [ ] SilverBullet removal (2026-11-23): tunnel route and DNS record, Tailscale devices, the host backup timer, and the files it left in the vault folder root ([silverbullet.md](../services/silverbullet.md), "Retired").
 - [ ] Syncthing: back up `/srv/syncthing/config`. Obsidian vault: decide on a nightly NAS copy.
 
 Monitoring ([ADR 0010](../decisions/0010-monitoring.md), [service doc](../services/monitoring.md)):

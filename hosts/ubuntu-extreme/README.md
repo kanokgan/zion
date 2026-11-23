@@ -16,13 +16,13 @@ Sections: access, what lives on the host, the NVIDIA stack, the network incident
 | Path or unit | What | Where it is described |
 |---|---|---|
 | `/srv/immich` | Immich library (static PV), root-owned | [immich.md](../../docs/services/immich.md) |
-| `/srv/silverbullet` | SilverBullet's old space, unused since 2026-11-11 (SilverBullet now opens the vault below) | [silverbullet.md](../../docs/services/silverbullet.md) |
-| `/srv/obsidian` (`config/`, `vault/`) | Obsidian settings and the synced vault (also opened by SilverBullet) | [obsidian.md](../../docs/services/obsidian.md) |
+| `/srv/silverbullet` | SilverBullet's old space, unused since 2026-11-11; SilverBullet itself was removed on 2026-11-23. A copy is on the NAS (`/ZionLabs/SilverBullet/Backup`); safe to delete | [silverbullet.md](../../docs/services/silverbullet.md) |
+| `/srv/obsidian` (`config/`, `vault/`) | Obsidian settings and the synced vault | [obsidian.md](../../docs/services/obsidian.md) |
 | `/srv/syncthing/config` | Syncthing identity and config | [syncthing.md](../../docs/services/syncthing.md) |
 | `/srv/git-mirror` | Bare mirrors of all GitHub repos with LFS, owned by `kanokgan` (not a PV) | [github-mirror.md](../../docs/services/github-mirror.md) |
 | `/mnt/*` and `/srv/external/*` | CIFS mounts of NAS shares (`/etc/fstab`, credentials outside Git, pattern in `fstab.example`) | [immich.md](../../docs/services/immich.md), "External libraries" |
 | `cloudflared.service` | tunnel `ubuntu-extreme` | [cloudflared/](cloudflared/README.md) |
-| `immich-nas-sync.timer` (04:00), `silverbullet-nas-sync.timer` (04:30) | nightly copies to the NAS | [backup/](backup/README.md) |
+| `immich-nas-sync.timer` (04:00), `github-mirror.timer` (05:00) | nightly copies to the NAS | [backup/](backup/README.md) |
 | `k3s-install.sh`, `apt/51-zion-nvidia-blacklist` | k3s install, NVIDIA packages held back from unattended upgrades | below |
 
 All `/srv/*` directories sit on the one root volume (see the storage plan).
@@ -90,7 +90,7 @@ Each step is run by the owner. Gates that were checked on 2026-10-17: NAS snapsh
 ## Storage plan (decided 2026-10-21)
 
 The root filesystem is one LVM logical volume on a single 2 TB NVMe (`/dev/mapper/ubuntu--vg-ubuntu--lv`). `/srv/immich` is on it: about 1.5 TB used of 1.9 TB (82%) on 2026-10-21, mostly `library` (1.1 TB of originals), plus `encoded-video` (191 GB), `backups` (69 GB, DB dumps) and `thumbs` (52 GB).
-- **Headroom:** about six months at the current growth, after the cleanups listed in the tracker (dashcam transcodes, untracked files, lower DB dump retention). Revisit around April 2027, or earlier when the disk reaches about 90% (the monitoring alerts fire at 80% and 90%, ADR 0010). The notes apps (SilverBullet, Obsidian, Syncthing) are on the same volume; about 400 GB were free after Immich on 2026-10-25.
+- **Headroom:** about six months at the current growth, after the cleanups listed in the tracker (dashcam transcodes, untracked files, lower DB dump retention). Revisit around April 2027, or earlier when the disk reaches about 90% (the monitoring alerts fire at 80% and 90%, ADR 0010). The notes apps (Obsidian, Syncthing) are on the same volume; about 400 GB were free after Immich on 2026-10-25.
 - **Plan: add a second 2 TB NVMe and extend the volume** (add it to the volume group, grow the logical volume and the filesystem online; no reinstall, no change to `/srv/immich` or the manifests). The machine has two M.2 slots; installing the disk needs someone at the machine and a shutdown, so everything is down while it is open.
 - **Accepted risk:** the filesystem then spans two disks, so losing either NVMe loses the whole filesystem (OS, k3s state, Postgres, library). The mitigation is the nightly copy of `/srv/immich` to the NAS (`backup/`) and rebuilding from this repo. The alternative that keeps the failure domains separate (the new disk mounted only at `/srv/immich/library`, a one-time copy of about 1.1 TB) was considered and not chosen.
 - **Considered and deferred:** moving the originals (`library`, `upload`) to the NAS and keeping only thumbnails and transcodes on the NVMe. It makes the NAS the only good copy of the photos, so it needs a second copy of the originals elsewhere and an ADR on the NAS storage pattern first.

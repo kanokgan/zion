@@ -5,6 +5,5 @@ kind: Kustomization
 resources:
   - immich
   - actual
-  - silverbullet
   - obsidian
   - syncthing

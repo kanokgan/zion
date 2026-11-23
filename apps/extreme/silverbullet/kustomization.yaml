@@ -3,6 +3,8 @@
 # tunnel ubuntu-extreme -> localhost:30300 -> nodeport.yaml) and, for debugging this one instance, at
 # https://ubuntu-extreme-silverbullet.dove-komodo.ts.net (Tailscale sidecar, tailnet only). Login is SilverBullet's
 # own (SB_USER from silverbullet-auth.sops.yaml); there is no Cloudflare Access in front.
+# NOT DEPLOYED since 2026-11-23 (not listed in apps/extreme/kustomization.yaml). The tunnel route and the Tailscale
+# device were removed; a redeploy needs both again, plus a fresh Tailscale auth key.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
